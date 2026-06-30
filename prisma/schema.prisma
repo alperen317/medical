@@ -38,6 +38,8 @@ model User {
   passwordHash     String
   setupToken       String?   @unique
   setupTokenExpiry DateTime?
+  // Atandığı hasta bu durumlardan birine geçince kullanıcıya e-posta gönderilir.
+  notifyPatientStatuses PatientStatus[] @default([])
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

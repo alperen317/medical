@@ -1,5 +1,6 @@
 import "server-only"
 import { prisma } from "@/lib/prisma"
+import type { PatientStatus } from "@/generated/prisma/enums"
 
 export async function getUsers() {
   return prisma.user.findMany({
@@ -43,3 +44,19 @@ export async function getDoctors() {
 }
 
 export type DoctorListItem = Awaited<ReturnType<typeof getDoctors>>[number]
+
+// Kullanıcının "hasta durumu değişince e-posta al" tercih ettiği durumlar.
+export async function getUserNotifyStatuses(userId: string): Promise<PatientStatus[]> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notifyPatientStatuses: true },
+  })
+  return user?.notifyPatientStatuses ?? []
+}
+
+export async function setUserNotifyStatuses(userId: string, statuses: PatientStatus[]) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { notifyPatientStatuses: statuses },
+  })
+}

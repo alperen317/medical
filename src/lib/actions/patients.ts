@@ -8,7 +8,7 @@ import { verifySession } from "@/lib/dal"
 import { logActivity } from "@/lib/db/activity"
 import { createNotification } from "@/lib/db/notifications"
 import { getDoctors } from "@/lib/db/users"
-import { sendDoctorAssignmentEmail } from "@/lib/mailer"
+import { sendDoctorAssignmentEmail, sendPatientStatusEmail } from "@/lib/mailer"
 import { headers } from "next/headers"
 
 const patientSchema = z.object({
@@ -263,9 +263,16 @@ export async function updatePatientStatusAction(
       verifySession(),
       prisma.patient.findUnique({
         where: { id: patientId },
-        select: { firstName: true, lastName: true, assignedDoctorId: true },
+        select: { firstName: true, lastName: true, status: true, assignedDoctorId: true },
       }),
     ])
+    if (!patient) return { success: false, message: "Hasta bulunamadı" }
+
+    const prevStatus = patient.status
+    if (prevStatus === status) {
+      return { success: true, message: "Durum zaten güncel" }
+    }
+
     await prisma.patient.update({ where: { id: patientId }, data: { status } })
     revalidatePath(`/patients/${patientId}`)
     revalidatePath("/patients")
@@ -274,19 +281,42 @@ export async function updatePatientStatusAction(
       action: "patient.status_change",
       entityType: "patient",
       entityId: patientId,
-      entityLabel: patient ? `${patient.firstName} ${patient.lastName}` : undefined,
-      metadata: { status },
+      entityLabel: `${patient.firstName} ${patient.lastName}`,
+      metadata: { from: prevStatus, to: status },
     }).catch(console.error)
 
-    if (status === "critical" && patient?.assignedDoctorId && patient.assignedDoctorId !== session.userId) {
-      void createNotification({
-        userId: patient.assignedDoctorId,
-        type: "critical_patient",
-        title: "Kritik Hasta Uyarısı",
-        body: `${patient.firstName} ${patient.lastName} hastasının durumu KRİTİK olarak güncellendi.`,
-        entityType: "patient",
-        entityId: patientId,
-      }).catch(console.error)
+    const doctorId = patient.assignedDoctorId
+    if (doctorId && doctorId !== session.userId) {
+      const patientName = `${patient.firstName} ${patient.lastName}`
+
+      // Kritik durumda her zaman in-app uyarı (mevcut davranış korunuyor).
+      if (status === "critical") {
+        void createNotification({
+          userId: doctorId,
+          type: "critical_patient",
+          title: "Kritik Hasta Uyarısı",
+          body: `${patientName} hastasının durumu KRİTİK olarak güncellendi.`,
+          entityType: "patient",
+          entityId: patientId,
+        }).catch(console.error)
+      }
+
+      // Doktor bu duruma e-posta almayı seçmişse bildir.
+      const doctor = await prisma.user.findUnique({
+        where: { id: doctorId },
+        select: { email: true, name: true, notifyPatientStatuses: true },
+      })
+      if (doctor?.notifyPatientStatuses.includes(status)) {
+        const buildLink = await getPatientLink()
+        void sendPatientStatusEmail({
+          to: doctor.email,
+          doctorName: doctor.name,
+          patientName,
+          oldStatus: prevStatus,
+          newStatus: status,
+          patientLink: buildLink(patientId),
+        }).catch((err) => console.error("[mailer] status email failed:", err))
+      }
     }
 
     return { success: true, message: "Durum güncellendi" }

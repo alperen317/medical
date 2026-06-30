@@ -149,6 +149,69 @@ export async function sendDoctorAssignmentEmail({
   })
 }
 
+function statusBadge(status: string): string {
+  const label = STATUS_LABELS[status] ?? status
+  const bg = status === "critical" ? "#fee2e2" : status === "active" ? "#dcfce7" : "#f1f5f9"
+  const fg = status === "critical" ? "#991b1b" : status === "active" ? "#166534" : "#475569"
+  return `<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:${bg};color:${fg}">${label}</span>`
+}
+
+export async function sendPatientStatusEmail({
+  to,
+  doctorName,
+  patientName,
+  oldStatus,
+  newStatus,
+  patientLink,
+}: {
+  to: string
+  doctorName: string
+  patientName: string
+  oldStatus: string
+  newStatus: string
+  patientLink: string
+}) {
+  const newLabel = STATUS_LABELS[newStatus] ?? newStatus
+  await transport.sendMail({
+    from: SENDER,
+    to,
+    subject: `Yeditepe — Hasta Durumu Değişti: ${patientName} (${newLabel})`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff">
+        <h2 style="color:#0f172a;margin-bottom:4px">Hasta Durumu Değişti</h2>
+        <p style="color:#64748b;margin-bottom:24px">
+          Merhaba ${doctorName}, size atanmış olan hastanın durumu güncellendi.
+        </p>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px">
+          <p style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 16px 0">${patientName}</p>
+          <table style="border-collapse:collapse;width:100%;font-size:14px">
+            <tr>
+              <td style="color:#64748b;padding:6px 0;width:140px">Önceki Durum</td>
+              <td style="padding:6px 0">${statusBadge(oldStatus)}</td>
+            </tr>
+            <tr>
+              <td style="color:#64748b;padding:6px 0">Yeni Durum</td>
+              <td style="padding:6px 0">${statusBadge(newStatus)}</td>
+            </tr>
+          </table>
+        </div>
+
+        <a href="${patientLink}"
+           style="display:inline-block;background:#2563eb;color:#fff;font-weight:600;font-size:14px;
+                  padding:12px 24px;border-radius:8px;text-decoration:none;margin-bottom:24px">
+          Hasta Profilini Görüntüle
+        </a>
+
+        <p style="color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:16px;margin-top:8px">
+          Bu bildirimi, bildirim tercihlerinizde bu durumu seçtiğiniz için aldınız. Tercihlerinizi Ayarlar > Kişisel Bildirim Tercihleri'nden değiştirebilirsiniz.
+        </p>
+      </div>
+    `,
+    headers: { "X-Mailin-Tag": "Hasta Durumu" },
+  })
+}
+
 const TYPE_LABELS: Record<string, string> = {
   consultation: "Muayene",
   follow_up:    "Kontrol",

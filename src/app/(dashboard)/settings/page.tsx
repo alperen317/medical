@@ -1,15 +1,20 @@
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Bell } from "lucide-react"
+import { Bell, BellRing } from "lucide-react"
 import { verifySession } from "@/lib/dal"
 import { getNotificationSettings } from "@/lib/db/settings"
+import { getUserNotifyStatuses } from "@/lib/db/users"
 import { NotificationSettingsClient } from "./_components/notification-settings-client"
+import { PersonalNotificationSettingsClient } from "./_components/personal-notification-settings-client"
 
 export default async function SettingsPage() {
   const session = await verifySession()
   const canManage = session.permissions.includes("settings:manage")
 
-  const settings = await getNotificationSettings()
+  const [settings, myNotifyStatuses] = await Promise.all([
+    getNotificationSettings(),
+    getUserNotifyStatuses(session.userId),
+  ])
 
   return (
     <div>
@@ -34,6 +39,22 @@ export default async function SettingsPage() {
             <fieldset disabled={!canManage} className="disabled:opacity-60 disabled:cursor-not-allowed">
               <NotificationSettingsClient settings={settings} canManage={canManage} />
             </fieldset>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <BellRing className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-base">Kişisel Bildirim Tercihleri</CardTitle>
+            </div>
+            <CardDescription>
+              Size atanmış bir hastanın durumu seçtiğiniz duruma geçtiğinde e-posta ile bilgilendirilirsiniz.
+              Bu tercihler yalnızca sizin hesabınız içindir.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PersonalNotificationSettingsClient selected={myNotifyStatuses} />
           </CardContent>
         </Card>
       </div>
