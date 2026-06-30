@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: medpanel-db
+    environment:
+      POSTGRES_DB: medpanel
+      POSTGRES_USER: medpanel_user
+      POSTGRES_PASSWORD: medpanel_pass
+    ports:
+      - "8040:5432"
+    volumes:
+      - medpanel_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medpanel_user -d medpanel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Veritabanı şemasını uygular (prisma migrate deploy), tamamlanınca çıkar.
+  migrate:
+    build:
+      context: .
+      target: migrator
+    image: medpanel-migrate
+    container_name: medpanel-migrate
+    env_file:
+      - .env.local
+    environment:
+      # Container içi: db servisine internal ağdan bağlan (host 8040 değil).
+      DATABASE_URL: postgresql://medpanel_user:medpanel_pass@db:5432/medpanel
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # Next.js production sunucusu (standalone).
+  web:
+    build:
+      context: .
+      target: runner
+    image: medpanel-web
+    container_name: medpanel-web
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      PORT: "8060"
+      HOSTNAME: 0.0.0.0
+      # Container içi DB bağlantısı (env_file'daki localhost:8040 değerini ezer).
+      DATABASE_URL: postgresql://medpanel_user:medpanel_pass@db:5432/medpanel
+    ports:
+      - "8060:8060"
+    volumes:
+      # Yüklenen belgeler kalıcı olsun (uygulama process.cwd()/uploads'a yazar).
+      - medpanel_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8060/login >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  medpanel_pgdata:
+  medpanel_uploads:
