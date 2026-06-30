@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { verifySession, requirePermission } from "@/lib/dal"
 import { setNotificationSettings } from "@/lib/db/settings"
-import { setUserNotifyStatuses } from "@/lib/db/users"
+import { setUserNotifyStatuses, setUserNotifyActions } from "@/lib/db/users"
 import { logActivity } from "@/lib/db/activity"
-import type { PatientStatus } from "@/generated/prisma/enums"
+import type { PatientStatus, NotificationAction } from "@/generated/prisma/enums"
 
 export type SettingsFormState = {
   success?: boolean
@@ -39,6 +39,7 @@ export async function updateNotificationSettingsAction(
 }
 
 const PATIENT_STATUSES: PatientStatus[] = ["active", "inactive", "critical", "discharged"]
+const NOTIFICATION_ACTIONS: NotificationAction[] = ["report_added", "prescription_added"]
 
 // Giriş yapan kullanıcının KENDİ bildirim tercihleri — yetki gerektirmez.
 export async function updateMyNotificationPreferencesAction(
@@ -47,8 +48,11 @@ export async function updateMyNotificationPreferencesAction(
 ): Promise<SettingsFormState> {
   const session = await verifySession()
 
-  const selected = PATIENT_STATUSES.filter((s) => formData.get(`status.${s}`) === "true")
-  await setUserNotifyStatuses(session.userId, selected)
+  const selectedStatuses = PATIENT_STATUSES.filter((s) => formData.get(`status.${s}`) === "true")
+  await setUserNotifyStatuses(session.userId, selectedStatuses)
+
+  const selectedActions = NOTIFICATION_ACTIONS.filter((a) => formData.get(`action.${a}`) === "true")
+  await setUserNotifyActions(session.userId, selectedActions)
 
   void logActivity({
     actorId: session.userId,
@@ -56,7 +60,7 @@ export async function updateMyNotificationPreferencesAction(
     entityType: "user",
     entityId: session.userId,
     entityLabel: session.name,
-    metadata: { notifyPatientStatuses: selected },
+    metadata: { notifyPatientStatuses: selectedStatuses, notifyOnActions: selectedActions },
   }).catch(console.error)
 
   revalidatePath("/settings")

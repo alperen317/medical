@@ -14,11 +14,17 @@ const STATUS_OPTIONS: { value: string; label: string; description: string }[] = 
   { value: "inactive",   label: "Pasif",   description: "Atandığım hasta pasif duruma geçtiğinde." },
 ]
 
+const ACTION_OPTIONS: { value: string; label: string; description: string }[] = [
+  { value: "report_added",        label: "Rapor Eklendi",   description: "Atandığım hastaya belge/rapor yüklendiğinde." },
+  { value: "prescription_added",  label: "Reçete Eklendi",  description: "Atandığım hastaya reçete yazıldığında." },
+]
+
 type Props = {
-  selected: string[]
+  selectedStatuses: string[]
+  selectedActions: string[]
 }
 
-export function PersonalNotificationSettingsClient({ selected }: Props) {
+export function PersonalNotificationSettingsClient({ selectedStatuses, selectedActions }: Props) {
   const [state, action, pending] = useActionState(updateMyNotificationPreferencesAction, {})
 
   useEffect(() => {
@@ -41,7 +47,30 @@ export function PersonalNotificationSettingsClient({ selected }: Props) {
               id={`status-${opt.value}`}
               name={`status.${opt.value}`}
               value="true"
-              defaultChecked={selected.includes(opt.value)}
+              defaultChecked={selectedStatuses.includes(opt.value)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 pt-4 border-t border-border">
+        <p className="text-sm font-medium mb-1">Hasta Aksiyonları</p>
+        <p className="text-xs text-muted-foreground mb-2">
+          Atandığım hasta üzerinde aşağıdaki işlemler yapıldığında e-posta ile bilgilendirilirim.
+        </p>
+        {ACTION_OPTIONS.map((opt) => (
+          <div key={opt.value} className="flex items-start justify-between gap-4 py-4">
+            <div className="flex-1 min-w-0">
+              <label htmlFor={`action-${opt.value}`} className="text-sm font-medium cursor-pointer">
+                {opt.label}
+              </label>
+              <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+            </div>
+            <Switch
+              id={`action-${opt.value}`}
+              name={`action.${opt.value}`}
+              value="true"
+              defaultChecked={selectedActions.includes(opt.value)}
             />
           </div>
         ))}

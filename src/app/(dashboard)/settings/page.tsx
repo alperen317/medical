@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Bell, BellRing } from "lucide-react"
 import { verifySession } from "@/lib/dal"
 import { getNotificationSettings } from "@/lib/db/settings"
-import { getUserNotifyStatuses } from "@/lib/db/users"
+import { getUserNotifyStatuses, getUserNotifyActions } from "@/lib/db/users"
 import { NotificationSettingsClient } from "./_components/notification-settings-client"
 import { PersonalNotificationSettingsClient } from "./_components/personal-notification-settings-client"
 
@@ -11,9 +11,10 @@ export default async function SettingsPage() {
   const session = await verifySession()
   const canManage = session.permissions.includes("settings:manage")
 
-  const [settings, myNotifyStatuses] = await Promise.all([
+  const [settings, myNotifyStatuses, myNotifyActions] = await Promise.all([
     getNotificationSettings(),
     getUserNotifyStatuses(session.userId),
+    getUserNotifyActions(session.userId),
   ])
 
   return (
@@ -49,12 +50,12 @@ export default async function SettingsPage() {
               <CardTitle className="text-base">Kişisel Bildirim Tercihleri</CardTitle>
             </div>
             <CardDescription>
-              Size atanmış bir hastanın durumu seçtiğiniz duruma geçtiğinde e-posta ile bilgilendirilirsiniz.
+              Size atanmış bir hastanın durumu değiştiğinde, belge/rapor yüklendiğinde veya reçete yazıldığında e-posta ile bilgilendirilirsiniz.
               Bu tercihler yalnızca sizin hesabınız içindir.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PersonalNotificationSettingsClient selected={myNotifyStatuses} />
+            <PersonalNotificationSettingsClient selectedStatuses={myNotifyStatuses} selectedActions={myNotifyActions} />
           </CardContent>
         </Card>
       </div>

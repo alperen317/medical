@@ -1,6 +1,6 @@
 import "server-only"
 import { prisma } from "@/lib/prisma"
-import type { PatientStatus } from "@/generated/prisma/enums"
+import type { PatientStatus, NotificationAction } from "@/generated/prisma/enums"
 
 export async function getUsers() {
   return prisma.user.findMany({
@@ -58,5 +58,20 @@ export async function setUserNotifyStatuses(userId: string, statuses: PatientSta
   await prisma.user.update({
     where: { id: userId },
     data: { notifyPatientStatuses: statuses },
+  })
+}
+
+export async function getUserNotifyActions(userId: string): Promise<NotificationAction[]> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notifyOnActions: true },
+  })
+  return user?.notifyOnActions ?? []
+}
+
+export async function setUserNotifyActions(userId: string, actions: NotificationAction[]) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { notifyOnActions: actions },
   })
 }

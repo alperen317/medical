@@ -6,7 +6,10 @@ import { can } from "@/lib/permissions"
 import { extractTextFromPDF, cleanMedicalReportText } from "@/lib/pdf-parser"
 import { interpretLabReport } from "@/lib/ai/lab-report"
 import { createTimelineEventWithAttachment } from "@/lib/db/timeline"
+import { createNotification } from "@/lib/db/notifications"
 import { logActivity } from "@/lib/db/activity"
+import { prisma } from "@/lib/prisma"
+import { sendPatientActionEmail } from "@/lib/mailer"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -141,5 +144,59 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     },
   }).catch(console.error)
 
+  // Hasta atanmış doktorun bildirim tercihini kontrol et
+  notifyAssignedDoctorOnDocument(patientId, session.userId, title, aiReport).catch(console.error)
+
   return NextResponse.json({ event }, { status: 201 })
+}
+
+async function notifyAssignedDoctorOnDocument(
+  patientId: string,
+  actorId: string,
+  title: string,
+  aiReport: string | null
+) {
+  const patient = await prisma.patient.findUnique({
+    where: { id: patientId },
+    select: {
+      firstName: true,
+      lastName: true,
+      assignedDoctor: {
+        select: { id: true, email: true, name: true, notifyOnActions: true },
+      },
+    },
+  })
+  if (!patient?.assignedDoctor) return
+  const doctor = patient.assignedDoctor
+  if (!doctor.notifyOnActions.includes("report_added")) return
+  if (doctor.id === actorId) return
+
+  const patientName = `${patient.firstName} ${patient.lastName}`
+  const actionLabel = "Rapor Eklendi"
+  const actionDescription = aiReport
+    ? `${title} — ${aiReport.slice(0, 120)}...`
+    : `${title} belgesi yüklendi.`
+
+  void createNotification({
+    userId: doctor.id,
+    type: "report_added",
+    title: actionLabel,
+    body: `${patientName} — ${title}`,
+    entityType: "patient",
+    entityId: patientId,
+  }).catch(console.error)
+
+  const headersModule = await import("next/headers")
+  const host = (await headersModule.headers()).get("host") ?? "localhost:8060"
+  const protocol = host.startsWith("localhost") ? "http" : "https"
+  const patientLink = `${protocol}://${host}/patients/${patientId}`
+
+  void sendPatientActionEmail({
+    to: doctor.email,
+    doctorName: doctor.name,
+    patientName,
+    actionLabel,
+    actionDescription,
+    patientLink,
+  }).catch((err) => console.error("[mailer] document notification email failed:", err))
 }

@@ -220,6 +220,61 @@ const TYPE_LABELS: Record<string, string> = {
   other:        "Diğer",
 }
 
+export async function sendPatientActionEmail({
+  to,
+  doctorName,
+  patientName,
+  actionLabel,
+  actionDescription,
+  patientLink,
+}: {
+  to: string
+  doctorName: string
+  patientName: string
+  actionLabel: string
+  actionDescription: string
+  patientLink: string
+}) {
+  await transport.sendMail({
+    from: SENDER,
+    to,
+    subject: `Yeditepe — ${patientName}: ${actionLabel}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff">
+        <h2 style="color:#0f172a;margin-bottom:4px">Hasta Aksiyonu</h2>
+        <p style="color:#64748b;margin-bottom:24px">
+          Merhaba ${doctorName}, size atanmış olan hastanın kaydına yeni bir işlem eklendi.
+        </p>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px">
+          <p style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 16px 0">${patientName}</p>
+          <table style="border-collapse:collapse;width:100%;font-size:14px">
+            <tr>
+              <td style="color:#64748b;padding:6px 0;width:140px">İşlem</td>
+              <td style="color:#0f172a;font-weight:600;padding:6px 0">${actionLabel}</td>
+            </tr>
+            <tr>
+              <td style="color:#64748b;padding:6px 0;vertical-align:top">Detay</td>
+              <td style="color:#475569;padding:6px 0">${actionDescription}</td>
+            </tr>
+          </table>
+        </div>
+
+        <a href="${patientLink}"
+           style="display:inline-block;background:#2563eb;color:#fff;font-weight:600;font-size:14px;
+                  padding:12px 24px;border-radius:8px;text-decoration:none;margin-bottom:24px">
+          Hasta Profilini Görüntüle
+        </a>
+
+        <p style="color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:16px">
+          Bu bildirimi, bildirim tercihlerinizde bu aksiyonu seçtiğiniz için aldınız. Tercihlerinizi Ayarlar &gt; Kişisel Bildirim Tercihleri'nden değiştirebilirsiniz.
+        </p>
+      </div>
+    `,
+    headers: { "X-Mailin-Tag": "Hasta Aksiyonu" },
+  })
+}
+
 export async function sendAppointmentEmail({
   to,
   recipientName,

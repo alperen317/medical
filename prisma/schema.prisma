@@ -40,6 +40,8 @@ model User {
   setupTokenExpiry DateTime?
   // Atandığı hasta bu durumlardan birine geçince kullanıcıya e-posta gönderilir.
   notifyPatientStatuses PatientStatus[] @default([])
+  // Hasta üzerinde belirli aksiyonlar (belge yükleme, reçete yazma vb.) yapıldığında bildirim al.
+  notifyOnActions NotificationAction[] @default([])
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -78,6 +80,11 @@ enum PatientStatus {
   inactive
   critical
   discharged
+}
+
+enum NotificationAction {
+  report_added
+  prescription_added
 }
 
 enum Gender {

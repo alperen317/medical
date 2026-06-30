@@ -5,6 +5,8 @@ import { z } from "zod/v4"
 import { prisma } from "@/lib/prisma"
 import { verifySession } from "@/lib/dal"
 import { logActivity } from "@/lib/db/activity"
+import { createNotification } from "@/lib/db/notifications"
+import { sendPatientActionEmail } from "@/lib/mailer"
 
 const prescriptionSchema = z.object({
   patientId: z.string().min(1),
@@ -40,7 +42,13 @@ export async function createPrescriptionAction(
   try {
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
-      select: { firstName: true, lastName: true },
+      select: {
+        firstName: true,
+        lastName: true,
+        assignedDoctor: {
+          select: { id: true, email: true, name: true, notifyOnActions: true },
+        },
+      },
     })
 
     await prisma.prescription.create({
@@ -67,6 +75,39 @@ export async function createPrescriptionAction(
       entityLabel: patient ? `${patient.firstName} ${patient.lastName} — ${medication}` : medication,
       metadata: { medication, dosage, frequency, duration },
     }).catch(console.error)
+
+    // Hasta atanmış doktorun bildirim tercihini kontrol et
+    if (patient?.assignedDoctor && patient.assignedDoctor.id !== session.userId) {
+      const doctor = patient.assignedDoctor
+      if (doctor.notifyOnActions.includes("prescription_added")) {
+        const patientName = `${patient.firstName} ${patient.lastName}`
+        const actionLabel = "Reçete Eklendi"
+        const actionDescription = `${medication} ${dosage} — ${frequency}`
+
+        void createNotification({
+          userId: doctor.id,
+          type: "prescription_added",
+          title: actionLabel,
+          body: `${patientName} — ${medication}`,
+          entityType: "patient",
+          entityId: patientId,
+        }).catch(console.error)
+
+        const headersModule = await import("next/headers")
+        const host = (await headersModule.headers()).get("host") ?? "localhost:8060"
+        const protocol = host.startsWith("localhost") ? "http" : "https"
+        const patientLink = `${protocol}://${host}/patients/${patientId}`
+
+        void sendPatientActionEmail({
+          to: doctor.email,
+          doctorName: doctor.name,
+          patientName,
+          actionLabel,
+          actionDescription,
+          patientLink,
+        }).catch((err) => console.error("[mailer] prescription notification email failed:", err))
+      }
+    }
 
     return { success: true }
   } catch {
