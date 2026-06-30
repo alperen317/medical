@@ -18,7 +18,7 @@ import { PatientStatusSelect } from "./_components/patient-status-select"
 import { TimelineDeleteButton } from "./_components/timeline-delete-button"
 import { TimelineDocumentButton } from "./_components/timeline-document-button"
 import { AddPrescriptionDialog } from "./_components/add-prescription-dialog"
-import { DocumentsSection } from "@/components/documents/documents-section"
+import { DocumentsSection, AiReportText } from "@/components/documents/documents-section"
 import type { DocumentEvent } from "@/components/documents/documents-section"
 import { getPatientById } from "@/lib/db/patients"
 import { verifySession } from "@/lib/dal"
@@ -400,7 +400,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                                             <p className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">
                                               {t("patient.detail.ai_report")}
                                             </p>
-                                            <p className="text-xs text-foreground/80 leading-relaxed">{aiReport}</p>
+                                            <AiReportText text={aiReport} />
                                           </div>
                                         )}
                                         {abnormal.length > 0 && (

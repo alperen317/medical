@@ -65,7 +65,7 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function AiReportText({ text }: { text: string }) {
+export function AiReportText({ text }: { text: string }) {
   // Format A: ## Heading\ncontent (markdown headings)
   if (/^##\s+/m.test(text)) {
     return <SectionedReport text={text} splitPattern={/^##\s+/m} />

@@ -34,7 +34,10 @@ services:
     restart: "no"
 
   # Next.js production sunucusu (standalone).
+  # `--profile all` ile birlikte çalıştırın, aksi halde başlamaz.
   web:
+    profiles:
+      - all
     build:
       context: .
       target: runner
