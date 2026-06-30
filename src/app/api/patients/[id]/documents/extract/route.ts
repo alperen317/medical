@@ -31,8 +31,10 @@ export async function POST(request: NextRequest) {
   try {
     const parsed = await extractTextFromPDF(buffer)
     pdfText = cleanMedicalReportText(parsed.text)
-  } catch {
-    // non-fatal — taranmış/görüntü PDF'lerde metin çıkmayabilir
+  } catch (err) {
+    // non-fatal — taranmış/görüntü PDF'lerde metin çıkmayabilir.
+    // Yine de logla: gerçek bir çıkarma hatası mı yoksa gerçekten boş mu ayırt etmek için.
+    console.error("PDF metin çıkarma hatası:", err instanceof Error ? err.stack ?? err.message : err)
   }
 
   return NextResponse.json({ pdfText })

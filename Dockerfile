@@ -50,6 +50,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # (builder ile runner aynı taban: node:22-alpine → musl binary uyumlu).
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@napi-rs ./node_modules/@napi-rs
 
+# pdfjs-dist'in tamamı: trace yalnızca pdf.mjs'yi alır ama runtime'da
+# pdf.worker.mjs (fake worker), cmaps (CID/Türkçe fontlar), standard_fonts
+# ve wasm decoder'lar fs ile yüklenir. Eksiklerinde getText patlar → boş metin.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pdfjs-dist ./node_modules/pdfjs-dist
+
 # Yüklenen belgeler için yazılabilir dizin (compose'da volume ile kalıcı)
 RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 
