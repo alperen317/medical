@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Yeditepe Hasta Yönetim Paneli",
+  title: "Yeditepe Hasta Yönetim Paneli AI Projesi",
   description: "Hasta tanı, tedavi ve takip süreçlerini yönetin",
 };
 

@@ -30,7 +30,7 @@ export default async function SetupPage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-2xl font-bold">Yeditepe Hasta Yönetim Paneli — Kurulum</h1>
+          <h1 className="text-2xl font-bold">Yeditepe Hasta Yönetim Paneli AI Projesi — Kurulum</h1>
           <p className="mt-2 text-muted-foreground text-sm">
             İlk süper admin hesabını oluşturun. Sistem kurulduktan sonra bu sayfa erişilemez olacaktır.
           </p>

@@ -34,8 +34,8 @@ function LoginContent() {
 
       <div className="relative w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <Image src="/logo.svg" alt="Yeditepe Hasta Yönetim Paneli" height={48} width={218} className="w-auto" />
-          <p className="text-sm text-slate-400">Hasta Yönetim Paneli</p>
+          <Image src="/logo.svg" alt="Yeditepe Hasta Yönetim Paneli AI Projesi" height={48} width={218} className="w-auto" />
+          <p className="text-sm text-slate-400">Hasta Yönetim Paneli AI Projesi</p>
         </div>
 
         <Card className="border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">

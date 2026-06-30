@@ -14,7 +14,7 @@ const transport = nodemailer.createTransport({
 const SENDER = {
   // Brevo'da doğrulanmış bir gönderici adresi olmalı (Senders & IP > Senders)
   address: process.env.MAIL_FROM_ADDRESS ?? "noreply@yeditepe.com",
-  name: process.env.MAIL_FROM_NAME ?? "Yeditepe Hasta Yönetim Paneli",
+  name: process.env.MAIL_FROM_NAME ?? "Yeditepe Hasta Yönetim Paneli AI Projesi",
 }
 
 export async function sendPasswordResetEmail({
@@ -141,7 +141,7 @@ export async function sendDoctorAssignmentEmail({
         </a>
 
         <p style="color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:16px;margin-top:8px">
-          Bu bildirimi Yeditepe Hasta Yönetim Paneli gönderdi.
+          Bu bildirimi Yeditepe Hasta Yönetim Paneli AI Projesi gönderdi.
         </p>
       </div>
     `,
@@ -293,7 +293,7 @@ export async function sendAppointmentEmail({
         </div>
 
         <p style="color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:16px">
-          Bu bildirimi Yeditepe Hasta Yönetim Paneli gönderdi.
+          Bu bildirimi Yeditepe Hasta Yönetim Paneli AI Projesi gönderdi.
         </p>
       </div>
     `,
@@ -320,7 +320,7 @@ export async function sendSetupEmail({
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
         <h2 style="color:#0f172a;margin-bottom:8px">Hoş geldiniz, ${name}</h2>
         <p style="color:#64748b;margin-bottom:8px">
-          Yeditepe Hasta Yönetim Paneli'ne <strong>${roleName}</strong> rolüyle davet edildiniz.
+          Yeditepe Hasta Yönetim Paneli AI Projesi'ne <strong>${roleName}</strong> rolüyle davet edildiniz.
           Hesabınızı etkinleştirmek ve şifrenizi belirlemek için aşağıdaki butona tıklayın.
         </p>
         <p style="color:#94a3b8;font-size:12px;margin-bottom:24px">

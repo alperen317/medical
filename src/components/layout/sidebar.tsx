@@ -265,7 +265,7 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="flex h-16 items-center justify-between px-4 shrink-0">
-            <Image src="/logo.svg" alt="Yeditepe Hasta Yönetim Paneli" height={32} width={160} className="object-contain" />
+            <Image src="/logo.svg" alt="Yeditepe Hasta Yönetim Paneli AI Projesi" height={32} width={160} className="object-contain" />
             <button
               onClick={toggle}
               className="text-sidebar-muted-foreground hover:text-sidebar-accent-foreground transition-colors shrink-0"
