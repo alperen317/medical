@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String   @default("#6366f1")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  label       String
+  permissions String[]
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String
+  roleId           String
+  passwordHash     String
+  setupToken       String?   @unique
+  setupTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  role                Role            @relation(fields: [roleId], references: [id])
+  departments         Department[]
+  timelineEvents      TimelineEvent[]
+  diagnoses           Diagnosis[]
+  prescriptions       Prescription[]
+  patients            Patient[]       @relation("AssignedDoctor")
+  activityLogs        ActivityLog[]
+  doctorAppointments  Appointment[]   @relation("DoctorAppointments")
+  createdAppointments Appointment[]   @relation("CreatedAppointments")
+  notifications       Notification[]
+
+  @@index([roleId])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String
+  entityId    String?
+  entityLabel String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([actorId])
+  @@index([entityType])
+}
+
+enum PatientStatus {
+  active
+  inactive
+  critical
+  discharged
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum BloodType {
+  A_pos  @map("A+")
+  A_neg  @map("A-")
+  B_pos  @map("B+")
+  B_neg  @map("B-")
+  AB_pos @map("AB+")
+  AB_neg @map("AB-")
+  O_pos  @map("O+")
+  O_neg  @map("O-")
+}
+
+enum TimelineEventType {
+  visit
+  diagnosis
+  treatment
+  note
+  document
+  prescription
+  lab
+}
+
+enum DiagnosisSeverity {
+  mild
+  moderate
+  severe
+}
+
+enum DiagnosisStatus {
+  active
+  resolved
+  chronic
+}
+
+model Patient {
+  id                       String        @id @default(cuid())
+  tcNo                     String?       @unique
+  firstName                String
+  lastName                 String
+  dateOfBirth              DateTime
+  gender                   Gender
+  bloodType                BloodType?
+  phone                    String
+  email                    String?
+  address                  String?
+  status                   PatientStatus @default(active)
+  allergies                String[]
+  chronicConditions        String[]
+  assignedDoctorId         String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  assignedDoctor User?           @relation("AssignedDoctor", fields: [assignedDoctorId], references: [id])
+  timelineEvents TimelineEvent[]
+  diagnoses      Diagnosis[]
+  prescriptions  Prescription[]
+  appointments   Appointment[]
+
+  @@index([status])
+  @@index([assignedDoctorId])
+}
+
+model TimelineEvent {
+  id          String            @id @default(cuid())
+  patientId   String
+  type        TimelineEventType
+  title       String
+  description String
+  date        DateTime
+  createdById String
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  attachments Attachment[]
+
+  @@index([patientId, date])
+  @@index([type])
+}
+
+model Attachment {
+  id      String @id @default(cuid())
+  eventId String
+  name    String
+  url     String
+  size    Int
+  type    String
+
+  event TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Diagnosis {
+  id            String            @id @default(cuid())
+  patientId     String
+  name          String
+  icdCode       String?
+  description   String?
+  severity      DiagnosisSeverity
+  status        DiagnosisStatus   @default(active)
+  diagnosedAt   DateTime
+  diagnosedById String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  patient     Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  diagnosedBy User    @relation(fields: [diagnosedById], references: [id])
+
+  @@index([patientId])
+}
+
+model Prescription {
+  id             String   @id @default(cuid())
+  patientId      String
+  medication     String
+  dosage         String
+  frequency      String
+  duration       String
+  instructions   String?
+  active         Boolean  @default(true)
+  prescribedAt   DateTime
+  prescribedById String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  prescribedBy User    @relation(fields: [prescribedById], references: [id])
+
+  @@index([patientId])
+}
+
+enum AppointmentStatus {
+  scheduled
+  completed
+  cancelled
+  no_show
+}
+
+enum AppointmentType {
+  consultation
+  follow_up
+  procedure
+  lab
+  other
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  patientId   String
+  doctorId    String
+  scheduledAt DateTime
+  duration    Int               @default(30)
+  type        AppointmentType   @default(consultation)
+  status      AppointmentStatus @default(scheduled)
+  notes       String?
+  createdById String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor    User    @relation("DoctorAppointments",  fields: [doctorId],    references: [id])
+  createdBy User    @relation("CreatedAppointments", fields: [createdById], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([scheduledAt(sort: Desc)])
+  @@index([status])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String
+  title      String
+  body       String
+  entityType String?
+  entityId   String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt(sort: Desc)])
+}
