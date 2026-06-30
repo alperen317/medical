@@ -45,6 +45,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# pdf-parse, DOMMatrix/ImageData/Path2D için @napi-rs/canvas'a ihtiyaç duyar.
+# Native + dinamik require olduğundan trace'e bırakmadan açıkça kopyalanır
+# (builder ile runner aynı taban: node:22-alpine → musl binary uyumlu).
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@napi-rs ./node_modules/@napi-rs
+
 # Yüklenen belgeler için yazılabilir dizin (compose'da volume ile kalıcı)
 RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 
