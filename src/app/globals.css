@@ -1,26 +1,197 @@
 @import "tailwindcss";
 
+/* dark: variant fires when data-theme="dark" is set on <html> */
+@variant dark (:root[data-theme="dark"] &);
+
+/* MedPanel Design System — Precise · Calm · Trustworthy */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light dark;
+
+  /* ── Light mode ─────────────────────────────────────── */
+  --background:          oklch(98.5% 0.004 80);
+  --foreground:          oklch(16%   0.008 240);
+  --card:                oklch(100%  0.002 80);
+  --card-foreground:     oklch(16%   0.008 240);
+  --popover:             oklch(100%  0.002 80);
+  --popover-foreground:  oklch(16%   0.008 240);
+
+  /* Primary: deep blue — trustworthy, calm */
+  --primary:             oklch(40%   0.130 264);
+  --primary-foreground:  oklch(97%   0.004 80);
+
+  --secondary:           oklch(95%   0.006 80);
+  --secondary-foreground: oklch(28%  0.010 240);
+  --muted:               oklch(94%   0.006 80);
+  --muted-foreground:    oklch(50%   0.008 240);
+  --accent:              oklch(95%   0.006 80);
+  --accent-foreground:   oklch(28%   0.010 240);
+
+  --destructive:         oklch(54%   0.220 22);
+  --destructive-foreground: oklch(98% 0.003 22);
+
+  --border:              oklch(90%   0.006 80);
+  --input:               oklch(90%   0.006 80);
+  --ring:                oklch(40%   0.130 264);
+  --radius:              0.5rem;
+
+  /* Status semantics */
+  --status-success:      oklch(93%   0.055 145);
+  --status-success-fg:   oklch(35%   0.140 145);
+  --status-warning:      oklch(96%   0.055 85);
+  --status-warning-fg:   oklch(40%   0.140 70);
+  --status-info:         oklch(94%   0.040 240);
+  --status-info-fg:      oklch(40%   0.130 240);
+
+  /* ── Sidebar: deep blue, same hue as primary ─────────── */
+  --sidebar-background:          oklch(22%  0.045 264);
+  --sidebar-foreground:          oklch(92%  0.005 80);
+  --sidebar-muted:               oklch(28%  0.040 264);
+  --sidebar-muted-foreground:    oklch(66%  0.012 264);
+  --sidebar-border:              oklch(28%  0.040 264);
+  --sidebar-accent:              oklch(30%  0.060 264);
+  --sidebar-accent-foreground:   oklch(96%  0.004 80);
+}
+
+/* Shared dark-mode values — applied by OS preference OR manual toggle */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background:          oklch(14%   0.008 240);
+    --foreground:          oklch(92%   0.004 80);
+    --card:                oklch(18%   0.010 240);
+    --card-foreground:     oklch(92%   0.004 80);
+    --popover:             oklch(18%   0.010 240);
+    --popover-foreground:  oklch(92%   0.004 80);
+
+    --primary:             oklch(56%   0.140 264);
+    --primary-foreground:  oklch(14%   0.010 264);
+
+    --secondary:           oklch(22%   0.010 240);
+    --secondary-foreground: oklch(90%  0.004 80);
+    --muted:               oklch(22%   0.010 240);
+    --muted-foreground:    oklch(60%   0.007 240);
+    --accent:              oklch(22%   0.010 240);
+    --accent-foreground:   oklch(90%   0.004 80);
+
+    --destructive:         oklch(52%   0.220 22);
+    --destructive-foreground: oklch(96% 0.003 22);
+
+    --border:              oklch(24%   0.010 240);
+    --input:               oklch(24%   0.010 240);
+    --ring:                oklch(56%   0.140 264);
+
+    --status-success:      oklch(22%   0.060 145);
+    --status-success-fg:   oklch(70%   0.130 145);
+    --status-warning:      oklch(24%   0.055 85);
+    --status-warning-fg:   oklch(74%   0.140 70);
+    --status-info:         oklch(22%   0.040 240);
+    --status-info-fg:      oklch(68%   0.120 240);
+
+    --sidebar-background:          oklch(18%  0.010 240);
+    --sidebar-foreground:          oklch(90%  0.004 80);
+    --sidebar-muted:               oklch(22%  0.010 240);
+    --sidebar-muted-foreground:    oklch(56%  0.007 240);
+    --sidebar-border:              oklch(24%  0.010 240);
+    --sidebar-accent:              oklch(22%  0.012 240);
+    --sidebar-accent-foreground:   oklch(90%  0.004 80);
+  }
+}
+
+/* Manual dark override — matches even when OS preference is light */
+:root[data-theme="dark"] {
+  --background:          oklch(14%   0.008 240);
+  --foreground:          oklch(92%   0.004 80);
+  --card:                oklch(18%   0.010 240);
+  --card-foreground:     oklch(92%   0.004 80);
+  --popover:             oklch(18%   0.010 240);
+  --popover-foreground:  oklch(92%   0.004 80);
+
+  --primary:             oklch(56%   0.140 264);
+  --primary-foreground:  oklch(14%   0.010 264);
+
+  --secondary:           oklch(22%   0.010 240);
+  --secondary-foreground: oklch(90%  0.004 80);
+  --muted:               oklch(22%   0.010 240);
+  --muted-foreground:    oklch(60%   0.007 240);
+  --accent:              oklch(22%   0.010 240);
+  --accent-foreground:   oklch(90%   0.004 80);
+
+  --destructive:         oklch(52%   0.220 22);
+  --destructive-foreground: oklch(96% 0.003 22);
+
+  --border:              oklch(24%   0.010 240);
+  --input:               oklch(24%   0.010 240);
+  --ring:                oklch(56%   0.140 264);
+
+  --status-success:      oklch(22%   0.060 145);
+  --status-success-fg:   oklch(70%   0.130 145);
+  --status-warning:      oklch(24%   0.055 85);
+  --status-warning-fg:   oklch(74%   0.140 70);
+  --status-info:         oklch(22%   0.040 240);
+  --status-info-fg:      oklch(68%   0.120 240);
+
+  --sidebar-background:          oklch(18%  0.010 240);
+  --sidebar-foreground:          oklch(90%  0.004 80);
+  --sidebar-muted:               oklch(22%  0.010 240);
+  --sidebar-muted-foreground:    oklch(56%  0.007 240);
+  --sidebar-border:              oklch(24%  0.010 240);
+  --sidebar-accent:              oklch(22%  0.012 240);
+  --sidebar-accent-foreground:   oklch(90%  0.004 80);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background:              var(--background);
+  --color-foreground:              var(--foreground);
+  --color-card:                    var(--card);
+  --color-card-foreground:         var(--card-foreground);
+  --color-popover:                 var(--popover);
+  --color-popover-foreground:      var(--popover-foreground);
+  --color-primary:                 var(--primary);
+  --color-primary-foreground:      var(--primary-foreground);
+  --color-secondary:               var(--secondary);
+  --color-secondary-foreground:    var(--secondary-foreground);
+  --color-muted:                   var(--muted);
+  --color-muted-foreground:        var(--muted-foreground);
+  --color-accent:                  var(--accent);
+  --color-accent-foreground:       var(--accent-foreground);
+  --color-destructive:             var(--destructive);
+  --color-destructive-foreground:  var(--destructive-foreground);
+  --color-border:                  var(--border);
+  --color-input:                   var(--input);
+  --color-ring:                    var(--ring);
+
+  --color-sidebar-background:          var(--sidebar-background);
+  --color-sidebar-foreground:          var(--sidebar-foreground);
+  --color-sidebar-muted:               var(--sidebar-muted);
+  --color-sidebar-muted-foreground:    var(--sidebar-muted-foreground);
+  --color-sidebar-border:              var(--sidebar-border);
+  --color-sidebar-accent:              var(--sidebar-accent);
+  --color-sidebar-accent-foreground:   var(--sidebar-accent-foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+::after,
+::before {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numbers for all metric/data values */
+.nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
