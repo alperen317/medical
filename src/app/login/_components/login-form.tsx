@@ -134,10 +134,6 @@ function LoginContent() {
                   "Giriş Yap"
                 )}
               </Button>
-
-              <p className="text-center text-xs text-slate-500 pt-1">
-                Test: ahmet.yilmaz@klinik.com / medpanel2024
-              </p>
             </form>
           </CardContent>
         </Card>
