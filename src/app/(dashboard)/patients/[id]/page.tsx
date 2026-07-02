@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Phone, Mail, MapPin, AlertTriangle,
   FileText, Pill, TestTube, Stethoscope, StickyNote,
@@ -425,7 +424,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
               <TabsContent value="timeline" className="mt-2">
                 <Card>
                   <CardContent className="p-4">
-                    <ScrollArea className="max-h-[70vh] pr-1 sm:pr-4">
+                    <div className="max-h-[70vh] overflow-y-auto pr-1 sm:pr-4">
                       <div className="relative">
                         <div className="absolute left-4 sm:left-5 top-0 bottom-0 w-px bg-border" />
                         <div className="space-y-4">
@@ -548,7 +547,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                           )}
                         </div>
                       </div>
-                    </ScrollArea>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
