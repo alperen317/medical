@@ -56,6 +56,8 @@ services:
       DATABASE_URL: postgresql://medpanel_user:medpanel_pass@db:5432/medpanel
       # Beyin tümörü segmentasyon servisi — AYRI sunucuda, Tailscale üzerinden.
       AI_INFERENCE_URL: http://100.100.122.39:8070
+      # Patoloji (WSI) tümör tespiti servisi — aynı AYRI sunucuda, Tailscale üzerinden.
+      PATHOLOGY_INFERENCE_URL: http://100.100.122.39:8071
     ports:
       - "8060:8060"
     volumes:

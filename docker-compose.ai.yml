@@ -42,3 +42,35 @@ services:
       retries: 5
       start_period: 40s
     restart: unless-stopped
+
+  # MONAI patoloji tümör tespiti mikroservisi (Python/FastAPI) — WSI ısı haritası.
+  pathology-inference:
+    build:
+      context: ./pathology-inference
+    image: medpanel-pathology-inference
+    container_name: medpanel-pathology-inference
+    environment:
+      # CPU'da makul sürede bitmesi için analiz edilen üst patch sayısı.
+      MAX_PATCHES: "300"
+    ports:
+      # Portu yalnızca Tailscale arayüzünde aç — public IP'de açık kalmaz,
+      # sadece tailnet üzerinden (web sunucusundan) erişilir.
+      - "100.100.122.39:8071:8071"
+    volumes:
+      # Örnek WSI'lar gitignore'lu; lokalden mount edilir.
+      - ./pathology-inference/sample_slides:/app/sample_slides:ro
+    # GPU için (NVIDIA + nvidia-container-toolkit gerekir) aşağıyı açın:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8071/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped

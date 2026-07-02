@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Phone, Mail, MapPin, AlertTriangle,
   FileText, Pill, TestTube, Stethoscope, StickyNote,
-  Clipboard, Clock, ArrowLeft, Pencil, Brain, FlaskConical,
+  Clipboard, Clock, ArrowLeft, Pencil, Brain, FlaskConical, Microscope,
 } from "lucide-react"
 import { CopyButton } from "./_components/copy-button"
 import { PatientActions } from "./_components/patient-actions"
@@ -22,6 +22,8 @@ import type { DocumentEvent } from "@/components/documents/documents-section"
 import { ClinicalSummaryPanel, type AiSummaryData } from "@/components/ai/clinical-summary-panel"
 import { BrainTumorPanel, TimelineBrainViewerButton } from "@/components/ai/brain-tumor-panel"
 import type { BrainAnalysisSummary } from "@/lib/ai/brain-tumor"
+import { PathologyPanel, TimelinePathologyViewerButton } from "@/components/ai/pathology-panel"
+import type { PathologyAnalysis } from "@/lib/ai/pathology"
 import { getPatientById } from "@/lib/db/patients"
 import { verifySession } from "@/lib/dal"
 import { can } from "@/lib/permissions"
@@ -60,6 +62,7 @@ const EVENT_STYLES: Record<TimelineEventType, { color: string; bgColor: string }
 const DOC_VARIANT_STYLES = {
   mr:        { icon: Brain,        color: "text-sky-600 dark:text-sky-400",         bgColor: "bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-900/60",             label: "Beyin MR" },
   biyokimya: { icon: FlaskConical, color: "text-fuchsia-600 dark:text-fuchsia-400", bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/40 border-fuchsia-200 dark:border-fuchsia-900/60", label: "Biyokimya" },
+  pathology: { icon: Microscope,   color: "text-violet-600 dark:text-violet-400",   bgColor: "bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900/60",   label: "Patoloji" },
 }
 
 interface PatientDetailPageProps {
@@ -127,6 +130,34 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
         source: m.source ?? "upload",
         overlayUrl: e.attachments[0]?.url ?? null,
         analysisFile: m.analysisFile ?? null,
+      }
+    })
+
+  // Kalıcı patoloji tümör tespiti analizleri — Patoloji sekmesinde geçmiş olarak gösterilir.
+  const pathologyAnalyses: PathologyAnalysis[] = patient.timelineEvents
+    .filter(
+      (e) =>
+        e.type === "document" &&
+        (e.metadata as { analysisType?: string } | null)?.analysisType === "pathology_tumor_detection",
+    )
+    .map((e) => {
+      const m = e.metadata as {
+        fileName?: string
+        heatmapUrl?: string
+        thumbnailUrl?: string
+        metrics?: PathologyAnalysis["metrics"]
+        device?: string
+        elapsedMs?: number
+      }
+      return {
+        id: e.id,
+        date: e.date instanceof Date ? e.date.toISOString() : String(e.date),
+        fileName: m.fileName ?? "WSI",
+        heatmapUrl: m.heatmapUrl ?? "",
+        thumbnailUrl: m.thumbnailUrl ?? "",
+        metrics: m.metrics ?? { maxProb: 0, tumorAreaPct: 0, patchesAnalyzed: 0 },
+        device: m.device ?? "cpu",
+        elapsedMs: m.elapsedMs ?? 0,
       }
     })
 
@@ -387,6 +418,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                 <TabsTrigger value="timeline" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.timeline")}</TabsTrigger>
                 <TabsTrigger value="documents" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.documents")}</TabsTrigger>
                 <TabsTrigger value="brainmri" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.brainmri")}</TabsTrigger>
+                <TabsTrigger value="pathology" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.pathology")}</TabsTrigger>
               </TabsList>
 
               {/* Zaman çizelgesi */}
@@ -406,9 +438,11 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                               type === "document"
                                 ? meta?.analysisType === "brain_tumor_segmentation"
                                   ? DOC_VARIANT_STYLES.mr
-                                  : meta?.documentType === "biyokimya"
-                                    ? DOC_VARIANT_STYLES.biyokimya
-                                    : null
+                                  : meta?.analysisType === "pathology_tumor_detection"
+                                    ? DOC_VARIANT_STYLES.pathology
+                                    : meta?.documentType === "biyokimya"
+                                      ? DOC_VARIANT_STYLES.biyokimya
+                                      : null
                                 : null
                             const Icon = docVariant?.icon ?? EVENT_ICONS[type]
                             const style = docVariant ?? EVENT_STYLES[type]
@@ -480,6 +514,15 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                                         </div>
                                       )
                                     }
+                                    // Patoloji tespiti kaydı → ısı haritası görüntüleyici modalı.
+                                    if (bm?.analysisType === "pathology_tumor_detection") {
+                                      const pathologyAnalysis = pathologyAnalyses.find((a) => a.id === event.id)
+                                      return pathologyAnalysis ? (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          <TimelinePathologyViewerButton analysis={pathologyAnalysis} />
+                                        </div>
+                                      ) : null
+                                    }
                                     return (
                                       <div className="mt-3 flex flex-wrap gap-2">
                                         {event.attachments.map((att) => (
@@ -530,6 +573,15 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                   patientId={id}
                   canRun={can(session.permissions, "document:upload")}
                   initialAnalyses={brainAnalyses}
+                />
+              </TabsContent>
+
+              {/* Patoloji */}
+              <TabsContent value="pathology" className="mt-2">
+                <PathologyPanel
+                  patientId={id}
+                  canRun={can(session.permissions, "document:upload")}
+                  initialAnalyses={pathologyAnalyses}
                 />
               </TabsContent>
             </Tabs>

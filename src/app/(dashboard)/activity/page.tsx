@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { tr } from "date-fns/locale"
 import {
   LogIn, LogOut, UserPlus, UserCog, UserMinus, ShieldCheck, Building2,
-  Users, Stethoscope, ArrowRight, ChevronLeft, ChevronRight,
+  Users, Stethoscope, ArrowRight, ChevronLeft, ChevronRight, Brain, Microscope,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getServerT } from "@/lib/i18n/server"
@@ -37,6 +37,8 @@ const ACTION_STYLE: Record<string, {
   "department.delete":        { Icon: Building2,   iconBg: "bg-red-50 dark:bg-red-950/40",         iconColor: "text-red-600 dark:text-red-400",         badgeVariant: "destructive" },
   "timeline.create":          { Icon: Stethoscope, iconBg: "bg-blue-50 dark:bg-blue-950/40",       iconColor: "text-blue-600 dark:text-blue-400",       badgeVariant: "info" },
   "timeline.delete":          { Icon: Stethoscope, iconBg: "bg-red-50 dark:bg-red-950/40",         iconColor: "text-red-600 dark:text-red-400",         badgeVariant: "destructive" },
+  "ai.brain_segmentation":    { Icon: Brain,       iconBg: "bg-sky-50 dark:bg-sky-950/40",         iconColor: "text-sky-600 dark:text-sky-400",         badgeVariant: "info" },
+  "ai.pathology_detection":   { Icon: Microscope,  iconBg: "bg-violet-50 dark:bg-violet-950/40",   iconColor: "text-violet-600 dark:text-violet-400",   badgeVariant: "info" },
 }
 
 const ENTITY_FILTER_ICONS: Record<string, React.ElementType> = {
@@ -87,6 +89,8 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
     "settings.update":                   t("activity.action.settings.update"),
     "settings.translation.update":       t("activity.action.settings.translation.update"),
     "settings.translation.reset":        t("activity.action.settings.translation.reset"),
+    "ai.brain_segmentation":             t("activity.action.ai.brain_segmentation"),
+    "ai.pathology_detection":            t("activity.action.ai.pathology_detection"),
   }
 
   const ENTITY_FILTERS = [

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Brain, Loader2, AlertTriangle, Sparkles, Clock, Cpu, Eye, EyeOff, Upload, Check, History, GitCompare, ArrowUp, ArrowDown, Minus } from "lucide-react"
+import { Brain, Loader2, AlertTriangle, Sparkles, Clock, Cpu, Eye, EyeOff, Upload, Check, History, GitCompare, ArrowUp, ArrowDown, Minus, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/store/ui.store"
@@ -659,11 +659,27 @@ function BrainViewerPane({ analysis }: { analysis: BrainAnalysis }) {
   const [plane, setPlane] = useState<PlaneName>("axial")
   const [sliceIdx, setSliceIdx] = useState(() => defaultPosFor("axial"))
   const [opacity, setOpacity] = useState(DEFAULT_OPACITY)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [zoomedIn, setZoomedIn] = useState(false)
+  const [origin, setOrigin] = useState({ x: 50, y: 50 })
 
   // Düzlem değişince slider'ı o düzlemin varsayılan kesitine hizala.
   function selectPlane(p: PlaneName) {
     setPlane(p)
     setSliceIdx(defaultPosFor(p))
+  }
+
+  function handleZoomClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (zoomedIn) {
+      setZoomedIn(false)
+      return
+    }
+    const rect = e.currentTarget.getBoundingClientRect()
+    setOrigin({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    })
+    setZoomedIn(true)
   }
 
   const current = planesData[plane]
@@ -689,7 +705,7 @@ function BrainViewerPane({ analysis }: { analysis: BrainAnalysis }) {
       </div>
 
       {/* Katmanlı görüntü: base + maske (CSS opacity) */}
-      <div className="relative overflow-hidden rounded-md border bg-black">
+      <div className="relative overflow-hidden rounded-md border bg-black group">
         {slice && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -706,6 +722,14 @@ function BrainViewerPane({ analysis }: { analysis: BrainAnalysis }) {
         <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
           {PLANES.find((p) => p.key === plane)?.label} · kesit {slice?.index}
         </span>
+        <button
+          onClick={() => setFullscreen(true)}
+          title="Tam ekran görüntüle"
+          className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100"
+        >
+          <Maximize2 className="h-3 w-3" />
+          Büyüt
+        </button>
       </div>
 
       {/* Kesit kaydırıcı */}
@@ -755,6 +779,103 @@ function BrainViewerPane({ analysis }: { analysis: BrainAnalysis }) {
           </span>
         ))}
       </div>
+
+      <Dialog
+        open={fullscreen}
+        onOpenChange={(v) => {
+          setFullscreen(v)
+          if (!v) setZoomedIn(false)
+        }}
+      >
+        <DialogContent className="max-w-[98vw] w-[98vw] h-[96vh] flex flex-col p-3 overflow-hidden">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Brain className="h-4 w-4 text-sky-600" />
+              {PLANES.find((p) => p.key === plane)?.label} · kesit {slice?.index}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex shrink-0 rounded-md border bg-muted/40 p-0.5 text-xs w-fit">
+            {PLANES.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => selectPlane(p.key)}
+                className={`rounded px-2 py-1 transition-colors ${
+                  plane === p.key
+                    ? "bg-background font-medium shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div
+            className="relative min-h-0 flex-1 overflow-hidden rounded-md border bg-black flex items-center justify-center"
+            style={{ cursor: zoomedIn ? "zoom-out" : "zoom-in" }}
+            onClick={handleZoomClick}
+          >
+            <div
+              className="relative h-full w-full"
+              style={{
+                transform: `scale(${zoomedIn ? 2.5 : 1})`,
+                transformOrigin: `${origin.x}% ${origin.y}%`,
+                transition: "transform 150ms ease-out",
+              }}
+            >
+              {slice && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={slice.basePng} alt="Ham MR kesiti" className="h-full w-full select-none object-contain" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={slice.maskPng}
+                    alt="Tümör maskesi"
+                    className="absolute inset-0 h-full w-full select-none pointer-events-none object-contain"
+                    style={{ opacity: opacity / 100 }}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 pt-2">
+            <span className="w-16 shrink-0 text-[11px] text-muted-foreground">Kesit</span>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(current.slices.length - 1, 0)}
+              value={Math.min(sliceIdx, current.slices.length - 1)}
+              onChange={(e) => setSliceIdx(Number(e.target.value))}
+              className="h-1.5 flex-1 cursor-pointer accent-sky-600"
+            />
+            <span className="w-14 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+              {Math.min(sliceIdx, current.slices.length - 1) + 1}/{current.slices.length}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => setOpacity((o) => (o > 0 ? 0 : DEFAULT_OPACITY))}
+              className="flex w-16 shrink-0 items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              {opacity > 0 ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              Maske
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={opacity}
+              onChange={(e) => setOpacity(Number(e.target.value))}
+              className="h-1.5 flex-1 cursor-pointer accent-red-500"
+            />
+            <span className="w-14 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+              %{opacity}
+            </span>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
