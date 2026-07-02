@@ -62,6 +62,7 @@ export function BrainTumorPanel({
   const [staticView, setStaticView] = useState<BrainAnalysisSummary | null>(null)
   const [uploadFiles, setUploadFiles] = useState<UploadFiles>(EMPTY_UPLOAD)
   const [uploading, setUploading] = useState(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   // Karşılaştırma modu
   const [compareMode, setCompareMode] = useState(false)
@@ -91,6 +92,7 @@ export function BrainTumorPanel({
       setStaticView(null)
       setAnalysis(data.analysis)
       setUploadFiles(EMPTY_UPLOAD)
+      setUploadOpen(false)
       toast.success("Segmentasyon tamamlandı ve zaman çizelgesine eklendi.")
       // Sunucuyu yenile ki yeni analiz "Geçmiş Analizler" listesine düşsün.
       router.refresh()
@@ -170,16 +172,33 @@ export function BrainTumorPanel({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 border-b border-sky-100/70 dark:border-sky-900/40">
         <Brain className="h-4 w-4 shrink-0 text-sky-600" />
         <span className="text-sm font-medium">Beyin MR Tümör Analizi</span>
+        {canRun && (
+          <Button size="sm" onClick={() => setUploadOpen(true)} className="ml-auto h-7 gap-1.5 text-xs">
+            <Sparkles className="h-3.5 w-3.5" />
+            Yeni Analiz
+          </Button>
+        )}
       </div>
 
       <div className="px-3 py-3 space-y-3">
-        <UploadForm
-          files={uploadFiles}
-          onFile={(key, file) => setUploadFiles((prev) => ({ ...prev, [key]: file }))}
-          onSubmit={handleUpload}
-          disabled={!canRun}
-          uploading={uploading}
-        />
+        {/* Boş durum — hiç analiz yok ve görüntülenen bir şey de yok */}
+        {initialAnalyses.length === 0 && !analysis && !staticView && (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <Brain className="h-8 w-8 text-muted-foreground/30" />
+            <p className="text-sm font-medium">Henüz analiz yok</p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              {canRun
+                ? "4 modalite MR (FLAIR, T1, T1c, T2) yükleyip ilk segmentasyonu çalıştırın."
+                : "Görüntülenecek beyin MR analizi bulunmuyor."}
+            </p>
+            {canRun && (
+              <Button size="sm" onClick={() => setUploadOpen(true)} className="mt-1 gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                Yeni Analiz
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Tek analiz görünümü (karşılaştırma modunda gizli) */}
         {!compareMode && analysis && (
@@ -245,6 +264,25 @@ export function BrainTumorPanel({
           </div>
         )}
       </div>
+
+      {/* Yeni analiz — yükleme + segmentasyon modal içinde */}
+      <Dialog open={uploadOpen} onOpenChange={(v) => { if (!uploading) setUploadOpen(v) }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Brain className="h-4 w-4 text-sky-600" />
+              Yeni MR Analizi
+            </DialogTitle>
+          </DialogHeader>
+          <UploadForm
+            files={uploadFiles}
+            onFile={(key, file) => setUploadFiles((prev) => ({ ...prev, [key]: file }))}
+            onSubmit={handleUpload}
+            disabled={!canRun}
+            uploading={uploading}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

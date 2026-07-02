@@ -4,6 +4,7 @@ import { useActionState, useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
@@ -51,7 +52,16 @@ function FieldError({ errors, field }: { errors?: Record<string, string[]>; fiel
   return <p className="text-xs text-destructive mt-1">{msgs[0]}</p>
 }
 
-export function PatientActions({ patientId }: { patientId: string }) {
+// Sol rayda hızlı erişim için sunulan kayıt tipleri (2 sütunluk grid).
+const SIDEBAR_ACTIONS: EventType[] = ["visit", "note", "lab", "document", "diagnosis", "treatment"]
+
+export function PatientActions({
+  patientId,
+  variant = "toolbar",
+}: {
+  patientId: string
+  variant?: "toolbar" | "sidebar"
+}) {
   const [open, setOpen] = useState(false)
   const [lockedType, setLockedType] = useState<EventType | null>(null)
   const [selectedType, setSelectedType] = useState<EventType | null>(null)
@@ -100,14 +110,43 @@ export function PatientActions({ patientId }: { patientId: string }) {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-2" onClick={() => openDialog(null)} title="Yeni Kayıt">
-        <Plus className="h-4 w-4" />
-        <span className="hidden sm:inline">Yeni Kayıt</span>
-      </Button>
-      <Button size="sm" className="gap-2" onClick={() => openDialog("visit")} title="Muayene Başlat">
-        <Stethoscope className="h-4 w-4" />
-        <span className="hidden md:inline">Muayene Başlat</span>
-      </Button>
+      {variant === "sidebar" ? (
+        <Card>
+          <CardHeader className="pb-2 px-5 pt-4">
+            <CardTitle className="text-sm font-semibold">Hızlı Aksiyonlar</CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-4 grid grid-cols-2 gap-2">
+            {SIDEBAR_ACTIONS.map((v) => {
+              const type = EVENT_TYPES.find((e) => e.value === v)!
+              const Icon = type.icon
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => openDialog(v)}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", type.chipBg, type.chipText)}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  {type.label}
+                </button>
+              )
+            })}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => openDialog(null)} title="Yeni Kayıt">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Yeni Kayıt</span>
+          </Button>
+          <Button size="sm" className="gap-2" onClick={() => openDialog("visit")} title="Muayene Başlat">
+            <Stethoscope className="h-4 w-4" />
+            <span className="hidden md:inline">Muayene Başlat</span>
+          </Button>
+        </>
+      )}
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true) }}>
         <DialogContent className="max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden">
