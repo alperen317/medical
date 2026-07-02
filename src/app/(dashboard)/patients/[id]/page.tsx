@@ -81,9 +81,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
     patient.gender === "female" ? t("gender.female") :
     t("gender.other")
 
-  // Kozmetik hasta no — gerçek bir "hasta no" alanı yok: tcNo varsa onu, yoksa
-  // cuid'den türetilmiş kısa bir kod göster (yalnızca görüntüleme amaçlı).
-  const patientNo = patient.tcNo ?? `#PT-${patient.id.slice(-6).toUpperCase()}`
+  const tcNoLabel = patient.tcNo ?? "—"
 
   const eventLabels: Record<TimelineEventType, string> = {
     visit:        t("timeline.type.visit"),
@@ -176,12 +174,12 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
           lastName={patient.lastName}
           doctorName={patient.assignedDoctor?.name}
           status={patient.status}
-          patientNo={patientNo}
+          tcNo={tcNoLabel}
           age={age}
           genderLabel={genderLabel}
           bloodLabel={bloodLabel}
           labels={{
-            patientNo: "Hasta No",
+            tcNo: "TC Kimlik",
             ageGender: `${t("patient.detail.age")} / ${t("field.patient.gender")}`,
             bloodType: t("field.patient.blood_type"),
             ageUnit: "yaş",

@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Droplets, User, Hash } from "lucide-react"
+import { Droplets, User, IdCard } from "lucide-react"
 import type { PatientStatus } from "@/generated/prisma/enums"
 import { cn } from "@/lib/utils"
 
@@ -42,7 +42,7 @@ export function PatientBanner({
   lastName,
   doctorName,
   status,
-  patientNo,
+  tcNo,
   age,
   genderLabel,
   bloodLabel,
@@ -52,11 +52,11 @@ export function PatientBanner({
   lastName: string
   doctorName?: string | null
   status: PatientStatus
-  patientNo: string
+  tcNo: string
   age: number
   genderLabel: string
   bloodLabel: string | null
-  labels: { patientNo: string; ageGender: string; bloodType: string; ageUnit: string }
+  labels: { tcNo: string; ageGender: string; bloodType: string; ageUnit: string }
 }) {
   return (
     <div className="relative overflow-hidden rounded-xl border bg-card">
@@ -81,7 +81,7 @@ export function PatientBanner({
 
         {/* Stat kümesi */}
         <div className="flex flex-wrap items-center gap-y-3 divide-x divide-border sm:justify-end">
-          <Stat icon={Hash} label={labels.patientNo} value={<span className="font-mono">{patientNo}</span>} />
+          <Stat icon={IdCard} label={labels.tcNo} value={<span className="font-mono">{tcNo}</span>} />
           <Stat icon={User} label={labels.ageGender} value={`${age} ${labels.ageUnit} · ${genderLabel}`} />
           {bloodLabel && <Stat icon={Droplets} label={labels.bloodType} value={bloodLabel} accent />}
         </div>
