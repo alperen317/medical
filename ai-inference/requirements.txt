@@ -1,0 +1,14 @@
+# CPU-only PyTorch wheels by default. For GPU, install a CUDA torch build instead.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.3.1
+monai==1.4.0
+nibabel>=5.2
+numpy>=1.26,<2.0
+matplotlib>=3.8
+pillow>=10.0
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+requests>=2.31
+huggingface_hub>=0.23

@@ -1,15 +1,16 @@
 import { Header } from "@/components/layout/header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Clock, CheckCircle2, XCircle, CalendarX } from "lucide-react"
+import { CalendarDays, Clock, CheckCircle2, XCircle, CalendarX, UserX, ChevronLeft, ChevronRight, List, CalendarRange } from "lucide-react"
 import Link from "next/link"
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns"
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, addWeeks, parseISO, isValid } from "date-fns"
 import { tr } from "date-fns/locale"
 import { getAppointments, getAppointmentStats } from "@/lib/db/appointments"
 import { getDoctors } from "@/lib/db/users"
 import { prisma } from "@/lib/prisma"
 import { NewAppointmentButton } from "./_components/new-appointment-dialog"
 import { AppointmentStatusButton } from "./_components/appointment-status-button"
+import { AppointmentCalendar } from "./_components/appointment-calendar"
 import { cn } from "@/lib/utils"
 import { getServerT } from "@/lib/i18n/server"
 
@@ -29,18 +30,29 @@ const STATUS_BADGE: Record<string, "secondary" | "success" | "destructive" | "ou
 }
 
 interface AppointmentsPageProps {
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string; view?: string; week?: string }>
 }
 
 export default async function AppointmentsPage({ searchParams }: AppointmentsPageProps) {
   const t = await getServerT()
-  const { tab = "today" } = await searchParams
+  const { tab = "today", view = "list", week } = await searchParams
+  const isCalendar = view === "calendar"
 
   const now = new Date()
+
+  // Takvim görünümü: hafta bazlı aralık (week param ile ileri/geri gezinme)
+  const parsedWeek = week ? parseISO(week) : null
+  const weekStart = startOfWeek(parsedWeek && isValid(parsedWeek) ? parsedWeek : now, {
+    weekStartsOn: 1,
+  })
+
   let from: Date | undefined
   let to: Date | undefined
 
-  if (tab === "today") {
+  if (isCalendar) {
+    from = weekStart
+    to = endOfWeek(weekStart, { weekStartsOn: 1 })
+  } else if (tab === "today") {
     from = startOfDay(now)
     to = endOfDay(now)
   } else if (tab === "week") {
@@ -57,6 +69,9 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
       select: { id: true, firstName: true, lastName: true, phone: true },
     }),
   ])
+
+  const prevWeek = format(addWeeks(weekStart, -1), "yyyy-MM-dd")
+  const nextWeek = format(addWeeks(weekStart, 1), "yyyy-MM-dd")
 
   const doctors = rawDoctors.map((d) => ({
     id: d.id,
@@ -104,28 +119,88 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
       <div className="p-6 space-y-6">
         {/* Toolbar */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex gap-1 rounded-lg border bg-muted/50 p-1">
-            {TABS.map((tab_) => (
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Liste / Takvim geçişi */}
+            <div className="flex gap-1 rounded-lg border bg-muted/50 p-1">
               <Link
-                key={tab_.value}
-                href={`/appointments?tab=${tab_.value}`}
+                href="/appointments?view=list"
                 className={cn(
-                  "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                  tab === tab_.value
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  !isCalendar
                     ? "bg-background shadow-sm text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {tab_.label}
+                <List className="h-4 w-4" />
+                {t("appointment.view.list")}
               </Link>
-            ))}
+              <Link
+                href="/appointments?view=calendar"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  isCalendar
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <CalendarRange className="h-4 w-4" />
+                {t("appointment.view.calendar")}
+              </Link>
+            </div>
+
+            {isCalendar ? (
+              /* Hafta navigasyonu */
+              <div className="flex items-center gap-1">
+                <Link
+                  href={`/appointments?view=calendar&week=${prevWeek}`}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border hover:bg-muted"
+                  aria-label={t("appointment.week.prev")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Link>
+                <span className="min-w-40 text-center text-sm font-medium tabular-nums">
+                  {format(weekStart, "d MMM", { locale: tr })} – {format(endOfWeek(weekStart, { weekStartsOn: 1 }), "d MMM yyyy", { locale: tr })}
+                </span>
+                <Link
+                  href={`/appointments?view=calendar&week=${nextWeek}`}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border hover:bg-muted"
+                  aria-label={t("appointment.week.next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/appointments?view=calendar"
+                  className="ml-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  {t("common.today")}
+                </Link>
+              </div>
+            ) : (
+              /* Bugün / Hafta / Tümü sekmeleri */
+              <div className="flex gap-1 rounded-lg border bg-muted/50 p-1">
+                {TABS.map((tab_) => (
+                  <Link
+                    key={tab_.value}
+                    href={`/appointments?tab=${tab_.value}`}
+                    className={cn(
+                      "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+                      tab === tab_.value
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tab_.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           <NewAppointmentButton doctors={doctors} patients={patients} />
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50">
@@ -170,10 +245,27 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/40">
+                <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t("status.appointment.no_show")}</p>
+                <p className="text-xl font-bold">{stats.noShow}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Appointment List */}
-        {appointments.length === 0 ? (
+        {/* Body: Calendar or List */}
+        {isCalendar ? (
+          <AppointmentCalendar
+            appointments={appointments}
+            weekStart={weekStart}
+            labels={{ typeLabels: TYPE_LABELS, noAppts: t("appointment.empty.all") }}
+          />
+        ) : appointments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <CalendarX className="h-12 w-12 text-muted-foreground/40 mb-3" />
             <p className="font-medium text-muted-foreground">

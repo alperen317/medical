@@ -5,12 +5,14 @@ export type NotificationSettings = {
   appointmentDoctorEmail: boolean
   appointmentPatientEmail: boolean
   appointmentStatusDoctorEmail: boolean
+  appointmentReminderPatientEmail: boolean
 }
 
 const DEFAULTS: NotificationSettings = {
   appointmentDoctorEmail: true,
   appointmentPatientEmail: false,
   appointmentStatusDoctorEmail: false,
+  appointmentReminderPatientEmail: false,
 }
 
 export async function getNotificationSettings(): Promise<NotificationSettings> {
@@ -22,6 +24,7 @@ export async function getNotificationSettings(): Promise<NotificationSettings> {
     appointmentDoctorEmail:       (map["notify.appointment.doctor.email"]        ?? "true")  === "true",
     appointmentPatientEmail:      (map["notify.appointment.patient.email"]       ?? "false") === "true",
     appointmentStatusDoctorEmail: (map["notify.appointment.status.doctor.email"] ?? "false") === "true",
+    appointmentReminderPatientEmail: (map["notify.appointment.reminder.patient.email"] ?? "false") === "true",
   }
 }
 
@@ -30,6 +33,7 @@ export async function setNotificationSettings(settings: Partial<NotificationSett
     ["notify.appointment.doctor.email",        settings.appointmentDoctorEmail        ?? DEFAULTS.appointmentDoctorEmail],
     ["notify.appointment.patient.email",       settings.appointmentPatientEmail       ?? DEFAULTS.appointmentPatientEmail],
     ["notify.appointment.status.doctor.email", settings.appointmentStatusDoctorEmail  ?? DEFAULTS.appointmentStatusDoctorEmail],
+    ["notify.appointment.reminder.patient.email", settings.appointmentReminderPatientEmail ?? DEFAULTS.appointmentReminderPatientEmail],
   ]
 
   await Promise.all(

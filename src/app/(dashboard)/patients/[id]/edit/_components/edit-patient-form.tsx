@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
+import { IcdSearchInput, formatIcdEntry, extractIcdCode } from "@/components/icd-search-input"
 import { useT } from "@/store/translations-context"
 
 type Doctor = {
@@ -175,6 +176,13 @@ export function EditPatientForm({
 
   function handleTagChange(setter: (v: string[]) => void) {
     return (tags: string[]) => { setter(tags); setIsDirty(true) }
+  }
+
+  function handleIcdSelect(setter: (v: string[]) => void, current: string[]) {
+    return (entry: { code: string; title: string }) => {
+      const formatted = formatIcdEntry(entry)
+      if (!current.includes(formatted)) { setter([...current, formatted]); setIsDirty(true) }
+    }
   }
 
   const dobValue = format(new Date(patient.dateOfBirth), "yyyy-MM-dd")
@@ -416,6 +424,10 @@ export function EditPatientForm({
                   {t("field.patient.allergies")}
                 </span>
               </label>
+              <IcdSearchInput
+                onSelect={handleIcdSelect(setAllergies, allergies)}
+                existingCodes={allergies.map(extractIcdCode).filter((c): c is string => c !== null)}
+              />
               <TagInput
                 value={allergies}
                 onChange={handleTagChange(setAllergies)}
@@ -425,6 +437,10 @@ export function EditPatientForm({
             </div>
             <div className="space-y-1.5">
               <label className={labelClass}>{t("field.patient.chronic_conditions")}</label>
+              <IcdSearchInput
+                onSelect={handleIcdSelect(setChronicConditions, chronicConditions)}
+                existingCodes={chronicConditions.map(extractIcdCode).filter((c): c is string => c !== null)}
+              />
               <TagInput
                 value={chronicConditions}
                 onChange={handleTagChange(setChronicConditions)}

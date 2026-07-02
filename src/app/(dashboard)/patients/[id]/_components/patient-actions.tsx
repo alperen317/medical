@@ -100,13 +100,13 @@ export function PatientActions({ patientId }: { patientId: string }) {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-2" onClick={() => openDialog(null)}>
+      <Button variant="outline" size="sm" className="gap-2" onClick={() => openDialog(null)} title="Yeni Kayıt">
         <Plus className="h-4 w-4" />
-        Yeni Kayıt
+        <span className="hidden sm:inline">Yeni Kayıt</span>
       </Button>
-      <Button size="sm" className="gap-2" onClick={() => openDialog("visit")}>
+      <Button size="sm" className="gap-2" onClick={() => openDialog("visit")} title="Muayene Başlat">
         <Stethoscope className="h-4 w-4" />
-        Muayene Başlat
+        <span className="hidden md:inline">Muayene Başlat</span>
       </Button>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true) }}>

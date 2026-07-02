@@ -5,6 +5,7 @@ import { FileText, FlaskConical, BrainCircuit } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { AiReportText } from "@/components/documents/documents-section"
 
 interface LabValue {
   name: string
@@ -35,125 +36,6 @@ const STATUS_STYLES: Record<LabValue["status"], { badge: string; row: string }> 
 
 const STATUS_LABELS: Record<LabValue["status"], string> = {
   normal: "Normal", high: "Yüksek", low: "Düşük", critical: "Kritik",
-}
-
-function BoldHeadingReport({ text }: { text: string }) {
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean)
-
-  return (
-    <div className="space-y-2">
-      {lines.map((line, i) => {
-        const boldMatch = line.match(/^\*\*(.+?)\*\*[:\s-]*(.*)$/)
-        if (boldMatch) {
-          const heading = boldMatch[1].trim()
-          const rest    = boldMatch[2].trim()
-          return (
-            <div key={i} className={rest ? "space-y-0.5" : ""}>
-              <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">{heading}</p>
-              {rest && <p className="text-sm leading-relaxed text-foreground/85">{rest}</p>}
-            </div>
-          )
-        }
-        if (/^-\s+/.test(line)) return (
-          <p key={i} className="text-sm leading-relaxed text-foreground/85 pl-3 border-l-2 border-violet-200">
-            {line.replace(/^-\s+/, "")}
-          </p>
-        )
-        return <p key={i} className="text-sm leading-relaxed text-foreground/85">{line}</p>
-      })}
-    </div>
-  )
-}
-
-function SectionedReport({ text, splitPattern, numbered = false }: {
-  text: string
-  splitPattern: RegExp
-  numbered?: boolean
-}) {
-  const rawSections = text.split(splitPattern).filter(Boolean)
-  const sections = rawSections
-    .map((section) => {
-      const nl      = section.indexOf("\n")
-      const rawHead = nl < 0 ? section.trim() : section.slice(0, nl).trim()
-      const heading = numbered
-        ? rawHead.replace(/^\d+\.\s+/, "").replace(/:$/, "")
-        : rawHead.replace(/^##\s*/, "").replace(/:$/, "")
-      const body    = nl < 0 ? "" : section.slice(nl + 1).trim()
-      const lines   = body.split("\n").map((l) => l.trim()).filter(Boolean)
-      return { heading, lines }
-    })
-    .filter((s) => s.heading.length > 0 && s.lines.length > 0)
-
-  return (
-    <div className="space-y-4">
-      {sections.map(({ heading, lines }, i) => (
-        <div key={i} className="space-y-1.5">
-          <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">
-            {heading}
-          </p>
-          <div className="space-y-1">
-            {lines.map((line, j) => {
-              if (/^-\s+/.test(line)) return (
-                <p key={j} className="text-sm leading-relaxed text-foreground/85 pl-3 border-l-2 border-violet-200">
-                  {line.replace(/^-\s+/, "")}
-                </p>
-              )
-              if (/^\d+\.\s+/.test(line)) {
-                const num  = line.match(/^(\d+)\./)![1]
-                const rest = line.replace(/^\d+\.\s+/, "")
-                return (
-                  <p key={j} className="text-sm leading-relaxed text-foreground/85">
-                    <span className="font-semibold text-violet-600 mr-1">{num}.</span>{rest}
-                  </p>
-                )
-              }
-              return <p key={j} className="text-sm leading-relaxed text-foreground/85">{line}</p>
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function AiReportText({ text }: { text: string }) {
-  if (/^##\s+/m.test(text)) {
-    return <SectionedReport text={text} splitPattern={/^##\s+/m} />
-  }
-
-  if (/^\d+\.\s+[A-ZÇĞİÖŞÜ]/m.test(text)) {
-    return <SectionedReport text={text} splitPattern={/(?=^\d+\.\s+)/m} numbered />
-  }
-
-  if (/^\*\*[^*]+\*\*/m.test(text)) {
-    return <BoldHeadingReport text={text} />
-  }
-
-  // Legacy format: "Header - body" separated by double newlines
-  const normalised = text
-    .replace(/\.\s*-\s+(?=[A-ZÇĞİÖŞÜ])/g, ".\n\n")
-    .replace(/\s{2,}(?=[A-ZÇĞİÖŞÜ])/g, "\n\n")
-  const segments = normalised.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean)
-
-  function renderSegment(seg: string, i: number) {
-    const dashIdx = seg.indexOf(" - ")
-    if (dashIdx > 0 && dashIdx < 90) {
-      const header = seg.slice(0, dashIdx).trim()
-      const body   = seg.slice(dashIdx + 3).trim()
-      if (body.length > 5) {
-        return (
-          <div key={i} className="space-y-1">
-            <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">{header}</p>
-            <p className="text-sm leading-relaxed text-foreground/85">{body}</p>
-          </div>
-        )
-      }
-    }
-    return <p key={i} className="text-sm leading-relaxed text-foreground/85">{seg}</p>
-  }
-
-  if (segments.length <= 1) return renderSegment(text.trim(), 0)
-  return <div className="space-y-4">{segments.map(renderSegment)}</div>
 }
 
 export function TimelineDocumentButton({ fileName, fileUrl, title, meta }: Props) {

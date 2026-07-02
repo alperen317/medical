@@ -20,6 +20,8 @@ import { TimelineDocumentButton } from "./_components/timeline-document-button"
 import { AddPrescriptionDialog } from "./_components/add-prescription-dialog"
 import { DocumentsSection, AiReportText } from "@/components/documents/documents-section"
 import type { DocumentEvent } from "@/components/documents/documents-section"
+import { ClinicalSummaryPanel, type AiSummaryData } from "@/components/ai/clinical-summary-panel"
+import { BrainTumorPanel } from "@/components/ai/brain-tumor-panel"
 import { getPatientById } from "@/lib/db/patients"
 import { verifySession } from "@/lib/dal"
 import { can } from "@/lib/permissions"
@@ -95,36 +97,36 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col lg:h-full">
       {/* Header */}
-      <div className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b bg-card px-4 sm:px-6 py-2 sm:py-0 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link href="/patients">
-            <Button variant="ghost" size="sm" className="gap-2 -ml-2">
+            <Button variant="ghost" size="sm" className="gap-2 -ml-2 shrink-0">
               <ArrowLeft className="h-4 w-4" />
               {t("action.back")}
             </Button>
           </Link>
-          <div className="h-4 w-px bg-border" />
-          <div>
-            <p className="text-sm font-semibold leading-none">{patient.firstName} {patient.lastName}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t("patient.detail.breadcrumb")}</p>
+          <div className="h-4 w-px bg-border shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-none truncate">{patient.firstName} {patient.lastName}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("patient.detail.breadcrumb")}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <PatientStatusSelect patientId={id} currentStatus={patient.status} />
           <Link href={`/patients/${id}/edit`}>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" title={t("action.edit")}>
               <Pencil className="h-4 w-4" />
-              {t("action.edit")}
+              <span className="hidden sm:inline">{t("action.edit")}</span>
             </Button>
           </Link>
           <PatientActions patientId={id} />
         </div>
       </div>
 
-      <div className="p-6 flex flex-col gap-6 flex-1 min-h-0">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 flex-1 min-h-0">
+      <div className="p-4 sm:p-6 flex flex-col gap-6 flex-1 lg:min-h-0">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:flex-1 lg:min-h-0">
           {/* Patient Info Card */}
           <div className="lg:col-span-1 space-y-4">
             <Card className="overflow-hidden">
@@ -315,21 +317,31 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
           </div>
 
           {/* Main Content - Tabs */}
-          <div className="lg:col-span-2 flex flex-col min-h-0">
-            <Tabs defaultValue="timeline" className="flex flex-col flex-1 min-h-0">
+          <div className="lg:col-span-2 flex flex-col lg:min-h-0">
+            <div className="shrink-0 mb-4 space-y-3">
+              <ClinicalSummaryPanel
+                patientId={id}
+                canGenerate={can(session.permissions, "patient:update")}
+                summary={patient.aiSummary}
+                summaryData={patient.aiSummaryData as AiSummaryData | null}
+                generatedAt={patient.aiSummaryAt ? patient.aiSummaryAt.toISOString() : null}
+              />
+            </div>
+            <Tabs defaultValue="timeline" className="flex flex-col lg:flex-1 lg:min-h-0">
               <TabsList className="w-full shrink-0">
-                <TabsTrigger value="timeline" className="flex-1">{t("patient.detail.tab.timeline")}</TabsTrigger>
-                <TabsTrigger value="prescriptions" className="flex-1">{t("patient.detail.tab.prescriptions")}</TabsTrigger>
-                <TabsTrigger value="documents" className="flex-1">{t("patient.detail.tab.documents")}</TabsTrigger>
+                <TabsTrigger value="timeline" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.timeline")}</TabsTrigger>
+                <TabsTrigger value="prescriptions" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.prescriptions")}</TabsTrigger>
+                <TabsTrigger value="documents" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.documents")}</TabsTrigger>
+                <TabsTrigger value="brainmri" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.brainmri")}</TabsTrigger>
               </TabsList>
 
               {/* Timeline */}
-              <TabsContent value="timeline" className="flex-1 flex flex-col min-h-0 mt-2">
-                <Card className="flex flex-col flex-1 min-h-0">
-                  <CardContent className="p-4 flex flex-col flex-1 min-h-0">
-                    <ScrollArea className="flex-1 min-h-0 pr-4">
+              <TabsContent value="timeline" className="flex flex-col lg:flex-1 lg:min-h-0 mt-2">
+                <Card className="flex flex-col lg:flex-1 lg:min-h-0">
+                  <CardContent className="p-4 flex flex-col lg:flex-1 lg:min-h-0">
+                    <ScrollArea className="lg:flex-1 lg:min-h-0 pr-1 sm:pr-4 max-lg:max-h-[70vh]">
                       <div className="relative">
-                        <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+                        <div className="absolute left-4 sm:left-5 top-0 bottom-0 w-px bg-border" />
                         <div className="space-y-4">
                           {patient.timelineEvents.map((event) => {
                             const type = event.type as TimelineEventType
@@ -338,11 +350,11 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                             const label = eventLabels[type]
                             const meta = event.metadata as Record<string, string> | null
                             return (
-                              <div key={event.id} className="relative flex gap-4 group">
-                                <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background ${style.bgColor}`}>
+                              <div key={event.id} className="relative flex gap-2.5 sm:gap-4 group">
+                                <div className={`relative z-10 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background ${style.bgColor}`}>
                                   <Icon className={`h-4 w-4 ${style.color}`} />
                                 </div>
-                                <div className={`flex-1 rounded-lg border p-3 ${style.bgColor} mb-2`}>
+                                <div className={`flex-1 min-w-0 rounded-lg border p-2.5 sm:p-3 ${style.bgColor} mb-2`}>
                                   <div className="flex items-start justify-between gap-2 flex-wrap">
                                     <div>
                                       <p className="font-semibold text-sm">{event.title}</p>
@@ -396,7 +408,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                                     return (
                                       <div className="mt-3 space-y-2">
                                         {aiReport && (
-                                          <div className="rounded-md bg-background/60 border border-violet-100 dark:border-violet-800/50 px-3 py-2">
+                                          <div className="rounded-md bg-background/60 border border-violet-100 dark:border-violet-800/50 px-2.5 sm:px-3 py-2">
                                             <p className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">
                                               {t("patient.detail.ai_report")}
                                             </p>
@@ -452,7 +464,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
               </TabsContent>
 
               {/* Prescriptions */}
-              <TabsContent value="prescriptions" className="flex-1 mt-2">
+              <TabsContent value="prescriptions" className="lg:flex-1 mt-2">
                 <Card>
                   <div className="flex items-center justify-between px-4 pt-4 pb-2">
                     <p className="text-sm font-semibold">
@@ -499,7 +511,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
               </TabsContent>
 
               {/* Documents */}
-              <TabsContent value="documents" className="flex-1 mt-2">
+              <TabsContent value="documents" className="lg:flex-1 mt-2">
                 <Card>
                   <CardContent className="p-4">
                     <DocumentsSection
@@ -518,6 +530,19 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                     />
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Beyin MR Tümör Analizi — forceMount + gizleme: sekme değişse de
+                  canlı görüntüleyici state'i korunsun (Radix aksi halde unmount eder). */}
+              <TabsContent
+                value="brainmri"
+                forceMount
+                className="lg:flex-1 mt-2 data-[state=inactive]:hidden"
+              >
+                <BrainTumorPanel
+                  patientId={id}
+                  canRun={can(session.permissions, "document:upload")}
+                />
               </TabsContent>
             </Tabs>
           </div>

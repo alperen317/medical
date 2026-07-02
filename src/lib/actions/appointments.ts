@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod/v4"
 import { verifySession } from "@/lib/dal"
 import { logActivity } from "@/lib/db/activity"
-import { createAppointmentDb, updateAppointmentStatusDb } from "@/lib/db/appointments"
+import { createAppointmentDb, updateAppointmentStatusDb, findConflictingAppointment } from "@/lib/db/appointments"
 import { createNotification } from "@/lib/db/notifications"
 import { getNotificationSettings } from "@/lib/db/settings"
 import { sendAppointmentEmail } from "@/lib/mailer"
@@ -40,6 +40,24 @@ export async function createAppointmentAction(
   const { patientId, doctorId, scheduledAt, duration, type, notes } = validated.data
 
   try {
+    const conflict = await findConflictingAppointment({
+      doctorId,
+      scheduledAt: new Date(scheduledAt),
+      duration,
+    })
+    if (conflict) {
+      const conflictTime = new Intl.DateTimeFormat("tr-TR", {
+        hour: "2-digit", minute: "2-digit",
+      }).format(new Date(conflict.scheduledAt))
+      return {
+        errors: {
+          scheduledAt: [
+            `Bu saat aralığı dolu: ${conflict.patient.firstName} ${conflict.patient.lastName} (${conflictTime}, ${conflict.duration} dk).`,
+          ],
+        },
+      }
+    }
+
     const [patient, doctor, notifySettings] = await Promise.all([
       prisma.patient.findUnique({ where: { id: patientId }, select: { firstName: true, lastName: true, email: true } }),
       prisma.user.findUnique({ where: { id: doctorId }, select: { name: true, email: true } }),
@@ -118,7 +136,7 @@ export async function createAppointmentAction(
 
 export async function updateAppointmentStatusAction(
   id: string,
-  status: "completed" | "cancelled"
+  status: "completed" | "cancelled" | "no_show"
 ): Promise<{ success: boolean; message: string }> {
   try {
     const session = await verifySession()

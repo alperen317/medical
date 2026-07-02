@@ -25,6 +25,7 @@ export async function updateNotificationSettingsAction(
     appointmentDoctorEmail:       bool("appointmentDoctorEmail"),
     appointmentPatientEmail:      bool("appointmentPatientEmail"),
     appointmentStatusDoctorEmail: bool("appointmentStatusDoctorEmail"),
+    appointmentReminderPatientEmail: bool("appointmentReminderPatientEmail"),
   })
 
   void logActivity({

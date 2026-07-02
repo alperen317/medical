@@ -1,8 +1,5 @@
 import "server-only"
-import OpenAI from "openai"
-
-const MODEL    = process.env.BYNARA_MODEL    ?? "auto/bynara"
-const BASE_URL = process.env.BYNARA_BASE_URL ?? "https://router.bynara.id/v1"
+import { callBynara, type ChatMessage } from "./bynara"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +22,7 @@ export interface LabReportResult {
   aiReport: string
 }
 
-type ClinicalSystem =
+export type ClinicalSystem =
   | "Hematoloji"
   | "Metabolik"
   | "Böbrek"
@@ -42,7 +39,7 @@ export interface ParsedRefRange {
   mode: "range" | "lt" | "gt" | "unknown"
 }
 
-interface RankedLabValue extends LabValue {
+export interface RankedLabValue extends LabValue {
   system: ClinicalSystem
   importanceScore: number
   riskNotes: string[]
@@ -129,7 +126,7 @@ export function parseRefRange(refRange: string): ParsedRefRange {
 // ── System detection ─────────────────────────────────────────────────────────
 
 // Strips Turkish diacritics and normalizes for OCR-tolerant comparison
-function normalizeTestName(name: string): string {
+export function normalizeTestName(name: string): string {
   return name
     .toLowerCase()
     .replace(/[üÜ]/g, "u")
@@ -227,7 +224,7 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n]
 }
 
-function detectSystem(name: string): ClinicalSystem {
+export function detectSystem(name: string): ClinicalSystem {
   const normalized = normalizeTestName(name)
 
   // 1. Exact lookup
@@ -475,7 +472,7 @@ const STATUS_LABEL: Record<LabValue["status"], string> = {
   normal:   "normal",
 }
 
-function formatLabLine(v: RankedLabValue): string {
+export function formatLabLine(v: RankedLabValue): string {
   const unit  = v.unit ? ` ${v.unit}` : ""
   const risks = v.riskNotes.length > 0 ? ` → ${v.riskNotes.join("; ")}` : ""
   return `- [${v.system}] ${v.name}: ${v.value}${unit} (${STATUS_LABEL[v.status]}, normal: ${v.refRange}, önem: ${v.importanceScore}/5)${risks}`
@@ -548,8 +545,6 @@ export function buildUserPrompt(
   return buildFallbackUserPrompt(documentType, fallbackText)
 }
 
-type ChatMessage = { role: "system" | "user"; content: string }
-
 function buildMessages(
   extractedValues: LabValue[],
   documentType: string,
@@ -569,39 +564,10 @@ export async function interpretLabReport(
   documentType: string,
   ctx: PatientContext = {},
 ): Promise<LabReportResult> {
-  const apiKey = process.env.BYNARA_API_KEY
-  if (!apiKey) throw new Error("BYNARA_API_KEY tanımlı değil")
-
   const extractedValues = parseLabValuesFromText(cleanedText)
   const messages        = buildMessages(extractedValues, documentType, cleanedText, ctx)
 
-  const client = new OpenAI({ baseURL: BASE_URL, apiKey })
-
-  let response
-  try {
-    response = await client.chat.completions.create({
-      model: MODEL,
-      messages,
-      max_tokens: 1200,
-      temperature: 0.2,
-    })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    throw new Error(`bynara: ${msg.slice(0, 200)}`)
-  }
-
-  const raw = response.choices?.[0]?.message?.content?.trim() ?? ""
-
-  // Strip reasoning model's <think>...</think> block; keep only the final answer
-  const stripped = raw.includes("</think>")
-    ? raw.slice(raw.lastIndexOf("</think>") + "</think>".length).trim()
-    : raw
-
-  // "var" is common Turkish — only catch code-shaped output or leaked chat template tokens
-  const isGarbage = /\b(ConfigureServices|using System|public class|namespace \w|import \w+;|export (default|function|class)|const \w+ =|function \w+\()/.test(stripped)
-    || stripped.includes("<|start_header_id|>")
-    || stripped.includes("<|im_start|>")
-  const aiReport  = isGarbage ? "" : stripped.trim()
+  const aiReport = await callBynara(messages, { maxTokens: 1200, temperature: 0.2 })
 
   return { extractedValues, aiReport }
 }

@@ -73,6 +73,13 @@ export function NotificationSettingsClient({ settings, canManage }: Props) {
           description="Randevu tamamlandığında veya iptal edildiğinde doktora e-posta gönderilir."
           defaultChecked={settings.appointmentStatusDoctorEmail}
         />
+        <SettingRow
+          id="appt-reminder-patient"
+          name="appointmentReminderPatientEmail"
+          label="Hastaya randevu hatırlatması gönder"
+          description="Randevudan 24 saat önce hastaya otomatik hatırlatma e-postası gönderilir (e-posta adresi kayıtlıysa)."
+          defaultChecked={settings.appointmentReminderPatientEmail}
+        />
       </div>
 
       {canManage && (

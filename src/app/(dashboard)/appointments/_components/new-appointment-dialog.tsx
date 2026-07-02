@@ -36,7 +36,16 @@ export function NewAppointmentButton({
   const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState<AppointmentFormState, FormData>(
-    createAppointmentAction,
+    async (prev, formData) => {
+      const result = await createAppointmentAction(prev, formData)
+      // Başarı yan etkilerini transition içinde ele al — effect'te senkron setState'ten kaçın.
+      if (result.success) {
+        toast.success(t("appointment.toast.created"))
+        setOpen(false)
+        resetForm()
+      }
+      return result
+    },
     {}
   )
   const [type, setType] = useState<string>("consultation")
@@ -62,14 +71,6 @@ export function NewAppointmentButton({
         `${p.firstName} ${p.lastName} ${p.phone}`.toLowerCase().includes(patientSearch.toLowerCase())
       )
     : patients.slice(0, 8)
-
-  useEffect(() => {
-    if (state.success) {
-      toast.success(t("appointment.toast.created"))
-      setOpen(false)
-      resetForm()
-    }
-  }, [state])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

@@ -55,6 +55,7 @@ model User {
   doctorAppointments  Appointment[]   @relation("DoctorAppointments")
   createdAppointments Appointment[]   @relation("CreatedAppointments")
   notifications       Notification[]
+  aiReportRatings     AiReportRating[]
 
   @@index([roleId])
 }
@@ -144,17 +145,45 @@ model Patient {
   emergencyContactName     String?
   emergencyContactPhone    String?
   emergencyContactRelation String?
+  aiSummary                String?
+  aiSummaryData            Json?
+  aiSummaryAt              DateTime?
+  aiSummaryById            String?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
 
-  assignedDoctor User?           @relation("AssignedDoctor", fields: [assignedDoctorId], references: [id])
-  timelineEvents TimelineEvent[]
-  diagnoses      Diagnosis[]
-  prescriptions  Prescription[]
-  appointments   Appointment[]
+  assignedDoctor  User?            @relation("AssignedDoctor", fields: [assignedDoctorId], references: [id])
+  timelineEvents  TimelineEvent[]
+  diagnoses       Diagnosis[]
+  prescriptions   Prescription[]
+  appointments    Appointment[]
+  aiReportRatings AiReportRating[]
 
   @@index([status])
   @@index([assignedDoctorId])
+}
+
+// AI çıktısı geri bildirimi: LLM'e gönderilen istem, üretilen sonuç ve kullanıcı puanı.
+model AiReportRating {
+  id           String   @id @default(cuid())
+  source       String   @default("patient_summary") // hangi AI özelliği
+  patientId    String?
+  systemPrompt String?  // LLM sistem mesajı (persona + format talimatı)
+  prompt       String   // LLM kullanıcı mesajı (veri bloğu + görev talimatı)
+  result       String   // LLM'in ürettiği sonuç (assistant mesajı)
+  rating       Int      // 👍 = 1, 👎 = -1
+  comment      String?
+  correctedResult String? // 👎 durumunda değerlendirenin yazdığı "ideal" çıktı (altın SFT verisi)
+  reasons      String[] // yapısal 👎 nedenleri: hallucination, missed_finding, wrong_tone, unsafe, other
+  model        String?
+  ratedById    String
+  createdAt    DateTime @default(now())
+
+  patient Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  ratedBy User     @relation(fields: [ratedById], references: [id])
+
+  @@index([patientId])
+  @@index([source])
 }
 
 model TimelineEvent {
@@ -252,6 +281,7 @@ model Appointment {
   status      AppointmentStatus @default(scheduled)
   notes       String?
   createdById String
+  reminderSentAt DateTime?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 

@@ -3,7 +3,6 @@ import path from "path"
 import fs from "fs/promises"
 import { getOptionalSession } from "@/lib/dal"
 import { can } from "@/lib/permissions"
-import { extractTextFromPDF, cleanMedicalReportText } from "@/lib/pdf-parser"
 import { interpretLabReport } from "@/lib/ai/lab-report"
 import { createTimelineEventWithAttachment } from "@/lib/db/timeline"
 import { createNotification } from "@/lib/db/notifications"
@@ -68,20 +67,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   await fs.mkdir(patientDir, { recursive: true })
   await fs.writeFile(path.join(patientDir, filename), buffer)
 
-  // 2. PDF metni: kullanıcı önizlemede onayladıysa onu kullan (tek doğruluk
-  //    kaynağı budur). Onaylanmış metin gelmediyse — geriye dönük uyumluluk
-  //    için — sunucu tarafında tekrar çıkar.
-  let pdfText = ""
-  if (confirmedText !== null) {
-    pdfText = confirmedText.trim()
-  } else {
-    try {
-      const parsed = await extractTextFromPDF(buffer)
-      pdfText = cleanMedicalReportText(parsed.text)
-    } catch {
-      // non-fatal
-    }
-  }
+  // 2. PDF metni: AI'a YALNIZCA kullanıcının önizleme adımında görüp onayladığı
+  //    metin gönderilir (gizlilik gereği — ham PDF metni hasta adı/TC içerebilir).
+  //    Onaylanmış metin gelmediyse ham metin AI'a GÖNDERİLMEZ; yalnızca dosya kaydedilir.
+  const pdfText = confirmedText !== null ? confirmedText.trim() : ""
 
   // 3. AI interpretation (non-fatal if fails)
   let aiReport: string | null = null

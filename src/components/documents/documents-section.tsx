@@ -65,6 +65,19 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// Satır-içi **kalın** markdown'ı gerçek <strong>'a çevirir. Hangi format dalına
+// düşülürse düşülsün ham `**` işaretlerinin ekranda kalmasını önler.
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  if (parts.length === 1) return text
+  return parts.map((part, i) => {
+    const m = part.match(/^\*\*([^*]+)\*\*$/)
+    return m
+      ? <strong key={i} className="font-semibold text-foreground">{m[1]}</strong>
+      : <span key={i}>{part}</span>
+  })
+}
+
 export function AiReportText({ text }: { text: string }) {
   // Format A: ## Heading\ncontent (markdown headings)
   if (/^##\s+/m.test(text)) {
@@ -95,13 +108,13 @@ export function AiReportText({ text }: { text: string }) {
       if (body.length > 5) {
         return (
           <div key={i} className="space-y-1">
-            <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">{header}</p>
-            <p className="text-sm leading-relaxed text-foreground/85">{body}</p>
+            <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">{renderInline(header)}</p>
+            <p className="text-sm leading-relaxed text-foreground/85">{renderInline(body)}</p>
           </div>
         )
       }
     }
-    return <p key={i} className="text-sm leading-relaxed text-foreground/85">{seg}</p>
+    return <p key={i} className="text-sm leading-relaxed text-foreground/85">{renderInline(seg)}</p>
   }
 
   if (segments.length <= 1) return renderSegment(text.trim(), 0)
@@ -121,17 +134,17 @@ function BoldHeadingReport({ text }: { text: string }) {
           const rest    = boldMatch[2].trim()
           return (
             <div key={i} className={rest ? "space-y-0.5" : ""}>
-              <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">{heading}</p>
-              {rest && <p className="text-sm leading-relaxed text-foreground/85">{rest}</p>}
+              <p className="text-[11px] font-semibold text-violet-700 uppercase tracking-wide">{renderInline(heading)}</p>
+              {rest && <p className="text-sm leading-relaxed text-foreground/85">{renderInline(rest)}</p>}
             </div>
           )
         }
         if (/^-\s+/.test(line)) return (
           <p key={i} className="text-sm leading-relaxed text-foreground/85 pl-3 border-l-2 border-violet-200">
-            {line.replace(/^-\s+/, "")}
+            {renderInline(line.replace(/^-\s+/, ""))}
           </p>
         )
-        return <p key={i} className="text-sm leading-relaxed text-foreground/85">{line}</p>
+        return <p key={i} className="text-sm leading-relaxed text-foreground/85">{renderInline(line)}</p>
       })}
     </div>
   )
@@ -167,7 +180,7 @@ function SectionedReport({ text, splitPattern, numbered = false }: {
             {lines.map((line, j) => {
               if (/^-\s+/.test(line)) return (
                 <p key={j} className="text-sm leading-relaxed text-foreground/85 pl-3 border-l-2 border-violet-200">
-                  {line.replace(/^-\s+/, "")}
+                  {renderInline(line.replace(/^-\s+/, ""))}
                 </p>
               )
               if (/^\d+\.\s+/.test(line)) {
@@ -175,11 +188,11 @@ function SectionedReport({ text, splitPattern, numbered = false }: {
                 const rest = line.replace(/^\d+\.\s+/, "")
                 return (
                   <p key={j} className="text-sm leading-relaxed text-foreground/85">
-                    <span className="font-semibold text-violet-600 mr-1">{num}.</span>{rest}
+                    <span className="font-semibold text-violet-600 mr-1">{num}.</span>{renderInline(rest)}
                   </p>
                 )
               }
-              return <p key={j} className="text-sm leading-relaxed text-foreground/85">{line}</p>
+              return <p key={j} className="text-sm leading-relaxed text-foreground/85">{renderInline(line)}</p>
             })}
           </div>
         </div>

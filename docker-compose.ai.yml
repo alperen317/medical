@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AI inference sunucusu (Sunucu A — GPU'lu, Tailscale ağında).
+#
+# Bu dosya YALNIZCA ai-inference mikroservisini çalıştırır. Next.js web + db
+# ayrı bir sunucudadır (docker-compose.yml) ve buraya Tailscale üzerinden bağlanır.
+#
+# Çalıştırma (A sunucusunda):
+#   docker compose -f docker-compose.ai.yml up -d --build
+#
+# İlk build MONAI model ağırlıklarını indirir (uzun sürebilir).
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  # MONAI beyin tümörü segmentasyon mikroservisi (Python/FastAPI).
+  ai-inference:
+    build:
+      context: ./ai-inference
+    image: medpanel-ai-inference
+    container_name: medpanel-ai-inference
+    environment:
+      # Bundle'ın resmî ROI'si (tüm hacim tek pencerede). Düşük RAM'li makinelerde
+      # "128,128,128" deneyin (doğrulukta hafif düşüş olabilir).
+      INFERENCE_ROI: "240,240,160"
+    ports:
+      # Portu yalnızca Tailscale arayüzünde aç — public IP'de açık kalmaz,
+      # sadece tailnet üzerinden (web sunucusundan) erişilir.
+      - "100.100.122.39:8070:8070"
+    volumes:
+      # Örnek vakalar gitignore'lu; lokalden mount edilir.
+      - ./ai-inference/sample_cases:/app/sample_cases:ro
+    # GPU için (NVIDIA + nvidia-container-toolkit gerekir) aşağıyı açın:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8070/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped

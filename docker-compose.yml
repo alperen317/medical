@@ -33,6 +33,9 @@ services:
         condition: service_healthy
     restart: "no"
 
+  # NOT: ai-inference servisi ayrı bir sunucuda (GPU'lu, Tailscale üzerinden erişilen)
+  # çalışır. Bkz. docker-compose.ai.yml. web servisi ona AI_INFERENCE_URL ile bağlanır.
+
   # Next.js production sunucusu (standalone).
   # `--profile all` ile birlikte çalıştırın, aksi halde başlamaz.
   web:
@@ -51,6 +54,8 @@ services:
       HOSTNAME: 0.0.0.0
       # Container içi DB bağlantısı (env_file'daki localhost:8040 değerini ezer).
       DATABASE_URL: postgresql://medpanel_user:medpanel_pass@db:5432/medpanel
+      # Beyin tümörü segmentasyon servisi — AYRI sunucuda, Tailscale üzerinden.
+      AI_INFERENCE_URL: http://100.100.122.39:8070
     ports:
       - "8060:8060"
     volumes:

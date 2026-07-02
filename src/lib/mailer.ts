@@ -284,6 +284,7 @@ export async function sendAppointmentEmail({
   duration,
   type,
   notes,
+  variant = "created",
 }: {
   to: string
   recipientName: string
@@ -293,6 +294,7 @@ export async function sendAppointmentEmail({
   duration: number
   type: string
   notes?: string
+  variant?: "created" | "reminder"
 }) {
   const dateStr = scheduledAt.toLocaleDateString("tr-TR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
@@ -300,14 +302,20 @@ export async function sendAppointmentEmail({
   const timeStr = scheduledAt.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
   const typeLabel = TYPE_LABELS[type] ?? type
 
+  const isReminder = variant === "reminder"
+  const heading = isReminder ? "Randevu Hatırlatması" : "Randevu Bildirimi"
+  const subject = isReminder
+    ? `Yeditepe — Randevu Hatırlatması: ${patientName}`
+    : `Yeditepe — Randevu Bildirimi: ${patientName}`
+
   await transport.sendMail({
     from: SENDER,
     to,
-    subject: `Yeditepe — Randevu Bildirimi: ${patientName}`,
+    subject,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff">
-        <h2 style="color:#0f172a;margin-bottom:4px">Randevu Bildirimi</h2>
-        <p style="color:#64748b;margin-bottom:24px">Merhaba ${recipientName},</p>
+        <h2 style="color:#0f172a;margin-bottom:4px">${heading}</h2>
+        <p style="color:#64748b;margin-bottom:24px">Merhaba ${recipientName},${isReminder ? " yaklaşan randevunuzu hatırlatmak isteriz." : ""}</p>
 
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px">
           <table style="border-collapse:collapse;width:100%;font-size:14px">
@@ -348,11 +356,11 @@ export async function sendAppointmentEmail({
         </div>
 
         <p style="color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:16px">
-          Bu bildirimi Yeditepe Hasta Yönetim Paneli AI Projesi gönderdi.
+          Bu ${isReminder ? "hatırlatmayı" : "bildirimi"} Yeditepe Hasta Yönetim Paneli AI Projesi gönderdi.
         </p>
       </div>
     `,
-    headers: { "X-Mailin-Tag": "Randevu Bildirimi" },
+    headers: { "X-Mailin-Tag": isReminder ? "Randevu Hatırlatması" : "Randevu Bildirimi" },
   })
 }
 
