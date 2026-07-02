@@ -51,7 +51,7 @@ export function TimelineDocumentButton({ fileName, fileUrl, title, meta }: Props
         className="flex items-center gap-1.5 rounded-md border bg-background/60 px-2 py-1 text-xs hover:bg-background transition-colors"
       >
         <FileText className="h-3 w-3" />
-        {fileName}
+        Raporu Görüntüle
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

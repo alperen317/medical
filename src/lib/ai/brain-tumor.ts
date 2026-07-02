@@ -40,6 +40,19 @@ export type BrainSegmentationResult = {
   device: string
 }
 
+/** Geçmiş analiz özeti — hasta detayında liste için (ağır viewer verisi olmadan). */
+export type BrainAnalysisSummary = {
+  id: string
+  date: string
+  volumes: { tc: number; wt: number; et: number }
+  /** Eski kayıtlarda bulunmayabilir (metrics sonradan eklendi). */
+  metrics: BrainMetrics | null
+  source: string
+  overlayUrl: string | null
+  /** Tam görüntüleyici JSON dosyası; null ise (eski kayıt) yalnızca özet gösterilir. */
+  analysisFile: string | null
+}
+
 /** Panele/istemciye dönen, kalıcılaştırılmış analiz sonucu (viewer PNG'leri data URI). */
 export type BrainAnalysis = {
   caseId: string

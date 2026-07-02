@@ -18,10 +18,11 @@ import { PatientStatusSelect } from "./_components/patient-status-select"
 import { TimelineDeleteButton } from "./_components/timeline-delete-button"
 import { TimelineDocumentButton } from "./_components/timeline-document-button"
 import { AddPrescriptionDialog } from "./_components/add-prescription-dialog"
-import { DocumentsSection, AiReportText } from "@/components/documents/documents-section"
+import { DocumentsSection } from "@/components/documents/documents-section"
 import type { DocumentEvent } from "@/components/documents/documents-section"
 import { ClinicalSummaryPanel, type AiSummaryData } from "@/components/ai/clinical-summary-panel"
-import { BrainTumorPanel } from "@/components/ai/brain-tumor-panel"
+import { BrainTumorPanel, TimelineBrainViewerButton } from "@/components/ai/brain-tumor-panel"
+import type { BrainAnalysisSummary } from "@/lib/ai/brain-tumor"
 import { getPatientById } from "@/lib/db/patients"
 import { verifySession } from "@/lib/dal"
 import { can } from "@/lib/permissions"
@@ -95,6 +96,31 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
     resolved: { label: t("diagnosis.status.resolved"), variant: "success" as const },
     chronic:  { label: t("diagnosis.status.chronic"),  variant: "warning" as const },
   }
+
+  // Kalıcı beyin MR analizleri — Beyin MR sekmesinde geçmiş olarak gösterilir.
+  const brainAnalyses: BrainAnalysisSummary[] = patient.timelineEvents
+    .filter(
+      (e) =>
+        e.type === "document" &&
+        (e.metadata as { analysisType?: string } | null)?.analysisType === "brain_tumor_segmentation",
+    )
+    .map((e) => {
+      const m = e.metadata as {
+        volumes?: { tc: number; wt: number; et: number }
+        metrics?: BrainAnalysisSummary["metrics"]
+        source?: string
+        analysisFile?: string
+      }
+      return {
+        id: e.id,
+        date: e.date instanceof Date ? e.date.toISOString() : String(e.date),
+        volumes: m.volumes ?? { tc: 0, wt: 0, et: 0 },
+        metrics: m.metrics ?? null,
+        source: m.source ?? "upload",
+        overlayUrl: e.attachments[0]?.url ?? null,
+        analysisFile: m.analysisFile ?? null,
+      }
+    })
 
   return (
     <div className="flex flex-col lg:h-full">
@@ -394,59 +420,42 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                                       </div>
                                     ) : null
                                   })()}
-                                  {event.type === "document" && (() => {
-                                    type DocMeta = {
-                                      extractedValues?: { name: string; value: string; unit: string; status: string; refRange: string }[] | null
-                                      aiReport?: string | null
+                                  {event.attachments.length > 0 && (() => {
+                                    const bm = event.metadata as {
+                                      analysisType?: string
+                                      analysisFile?: string
+                                      volumes?: { tc: number; wt: number; et: number }
+                                      metrics?: BrainAnalysisSummary["metrics"]
+                                    } | null
+                                    // Beyin MR analiz kaydı → interaktif görüntüleyici modalı.
+                                    if (bm?.analysisType === "brain_tumor_segmentation") {
+                                      return (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          <TimelineBrainViewerButton
+                                            patientId={id}
+                                            title={event.title}
+                                            overlayUrl={event.attachments[0]?.url ?? null}
+                                            analysisFile={bm.analysisFile ?? null}
+                                            volumes={bm.volumes ?? { tc: 0, wt: 0, et: 0 }}
+                                            metrics={bm.metrics ?? null}
+                                          />
+                                        </div>
+                                      )
                                     }
-                                    const dm = event.metadata as DocMeta | null
-                                    const abnormal = Array.isArray(dm?.extractedValues)
-                                      ? dm.extractedValues.filter((v) => v.status !== "normal")
-                                      : []
-                                    const aiReport = dm?.aiReport ?? null
-                                    if (!abnormal.length && !aiReport) return null
                                     return (
-                                      <div className="mt-3 space-y-2">
-                                        {aiReport && (
-                                          <div className="rounded-md bg-background/60 border border-violet-100 dark:border-violet-800/50 px-2.5 sm:px-3 py-2">
-                                            <p className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">
-                                              {t("patient.detail.ai_report")}
-                                            </p>
-                                            <AiReportText text={aiReport} />
-                                          </div>
-                                        )}
-                                        {abnormal.length > 0 && (
-                                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                            {abnormal.map((v, i) => (
-                                              <div key={i} className="rounded-md bg-background/60 px-2 py-1">
-                                                <p className="text-xs text-muted-foreground">{v.name}</p>
-                                                <p className={`text-sm font-semibold ${
-                                                  v.status === "critical" ? "text-red-800 dark:text-red-300" :
-                                                  v.status === "high"     ? "text-red-700 dark:text-red-400" :
-                                                                            "text-blue-700 dark:text-blue-400"
-                                                }`}>
-                                                  {v.value} {v.unit} {v.status === "low" ? "↓" : "↑"}
-                                                </p>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
+                                      <div className="mt-3 flex flex-wrap gap-2">
+                                        {event.attachments.map((att) => (
+                                          <TimelineDocumentButton
+                                            key={att.id}
+                                            fileName={att.name}
+                                            fileUrl={att.url}
+                                            title={event.title}
+                                            meta={event.type === "document" ? (event.metadata as { aiReport?: string | null; extractedValues?: { name: string; value: string; unit: string; refRange: string; status: "normal" | "high" | "low" | "critical" }[] | null } | null) : null}
+                                          />
+                                        ))}
                                       </div>
                                     )
                                   })()}
-                                  {event.attachments.length > 0 && (
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                      {event.attachments.map((att) => (
-                                        <TimelineDocumentButton
-                                          key={att.id}
-                                          fileName={att.name}
-                                          fileUrl={att.url}
-                                          title={event.title}
-                                          meta={event.type === "document" ? (event.metadata as { aiReport?: string | null; extractedValues?: { name: string; value: string; unit: string; refRange: string; status: "normal" | "high" | "low" | "critical" }[] | null } | null) : null}
-                                        />
-                                      ))}
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             )
@@ -542,6 +551,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                 <BrainTumorPanel
                   patientId={id}
                   canRun={can(session.permissions, "document:upload")}
+                  initialAnalyses={brainAnalyses}
                 />
               </TabsContent>
             </Tabs>

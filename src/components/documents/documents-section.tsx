@@ -25,6 +25,8 @@ export type DocumentMetadata = {
   aiReport?: string | null
   extractedValues?: LabValue[] | null
   aiError?: string | null
+  /** MR/beyin analizi gibi AI-lab-raporu olmayan belgeleri ayırt etmek için. */
+  analysisType?: string
 }
 
 export type DocumentEvent = {
@@ -324,8 +326,8 @@ function DocumentCard({ doc }: { doc: DocumentEvent }) {
         </>
       )}
 
-      {/* AI yorum yoksa bilgi satırı */}
-      {!aiReport && (
+      {/* AI yorum yoksa bilgi satırı — MR/beyin analizi belgelerinde gösterilmez. */}
+      {!aiReport && meta?.analysisType !== "brain_tumor_segmentation" && (
         <div className="border-t px-4 py-2.5">
           <span className="text-xs text-muted-foreground">
             AI yorumu oluşturulamadı.
