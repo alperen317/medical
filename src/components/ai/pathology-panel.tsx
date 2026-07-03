@@ -164,7 +164,13 @@ export function PathologyPanel({
 
 /** Geçmiş bir analizin özet kartı. */
 function HistoryCard({ analysis, onView }: { analysis: PathologyAnalysis; onView: () => void }) {
-  const dateStr = new Date(analysis.date).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })
+  // timeZone sabitlenmezse sunucu (SSR, genelde UTC) ile tarayıcı farklı saat dilimlerinde
+  // farklı metin üretir ve React hydration mismatch hatası (#418) verir.
+  const dateStr = new Date(analysis.date).toLocaleString("tr-TR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Istanbul",
+  })
   return (
     <div className="flex gap-2 rounded-md border p-2">
       <div className="relative shrink-0">

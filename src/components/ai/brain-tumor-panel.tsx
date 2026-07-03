@@ -303,9 +303,12 @@ function HistoryCard({
   onView: () => void
   onToggleSelect: () => void
 }) {
+  // timeZone sabitlenmezse sunucu (SSR, genelde UTC) ile tarayıcı farklı saat dilimlerinde
+  // farklı metin üretir ve React hydration mismatch hatası (#418) verir.
   const dateStr = new Date(summary.date).toLocaleString("tr-TR", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Europe/Istanbul",
   })
   return (
     <div
@@ -371,7 +374,8 @@ function ComparisonView({ comparison }: { comparison: ComparisonState }) {
   const days = Math.round(
     (new Date(follow.date).getTime() - new Date(base.date).getTime()) / 86_400_000,
   )
-  const fmt = (d: string) => new Date(d).toLocaleDateString("tr-TR", { dateStyle: "medium" })
+  const fmt = (d: string) =>
+    new Date(d).toLocaleDateString("tr-TR", { dateStyle: "medium", timeZone: "Europe/Istanbul" })
 
   // Kaba yanıt kategorisi — WT hacim % değişimi.
   const wtPct = base.volumes.wt > 0 ? ((follow.volumes.wt - base.volumes.wt) / base.volumes.wt) * 100 : 0
