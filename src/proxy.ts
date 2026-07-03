@@ -22,6 +22,11 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
   }
 
+  // v1 hasta detay/kayıt akışları kilitli: sadece super_admin erişebilir (arşiv/referans amaçlı)
+  if (path.startsWith("/patients") && session?.roleName !== "super_admin") {
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
+  }
+
   return NextResponse.next()
 }
 

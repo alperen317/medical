@@ -37,7 +37,7 @@ type NavItem = {
 
 const clinicalNavItems: NavItem[] = [
   { href: "/dashboard",    labelKey: "nav.dashboard",    icon: LayoutDashboard },
-  { href: "/patients",     labelKey: "nav.patients",     icon: Users },
+  { href: "/patients",     labelKey: "nav.patients",     icon: Users, roles: ["super_admin"] },
   { href: "/appointments", labelKey: "nav.appointments", icon: CalendarDays },
   { href: "/my-patients",  labelKey: "nav.my_patients",  icon: UserCheck, roles: ["doctor", "doktor", "hekim"] },
   { href: "/activity",     labelKey: "nav.activity",     icon: Activity },
