@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod/v4"
 import { prisma } from "@/lib/prisma"
 import type { Gender, BloodType, PatientStatus } from "@/generated/prisma/enums"
-import { verifySession } from "@/lib/dal"
+import { verifySession, requirePermission } from "@/lib/dal"
 import { logActivity } from "@/lib/db/activity"
 import { createNotification } from "@/lib/db/notifications"
 import { getDoctors } from "@/lib/db/users"
@@ -238,6 +238,45 @@ export async function updatePatientAction(
     if (msg.includes("tcNo")) return { errors: { tcNo: ["Bu TC kimlik numarası zaten kayıtlı"] } }
     return { message: "Bilgiler güncellenemedi. Lütfen tekrar deneyin." }
   }
+}
+
+export type DeletePatientState = {
+  success?: boolean
+  message?: string
+}
+
+export async function deletePatientAction(
+  _prev: DeletePatientState,
+  formData: FormData
+): Promise<DeletePatientState> {
+  const session = await verifySession()
+  requirePermission(session, "patient:delete")
+
+  const patientId = formData.get("patientId") as string
+  const patient = await prisma.patient.findUnique({
+    where: { id: patientId },
+    select: { firstName: true, lastName: true },
+  })
+  if (!patient) return { message: "Hasta bulunamadı" }
+
+  const patientName = `${patient.firstName} ${patient.lastName}`
+
+  try {
+    await prisma.patient.delete({ where: { id: patientId } })
+  } catch {
+    return { message: "Hasta silinemedi. Lütfen tekrar deneyin." }
+  }
+
+  revalidatePath("/patients")
+  void logActivity({
+    actorId: session.userId,
+    action: "patient.delete",
+    entityType: "patient",
+    entityId: patientId,
+    entityLabel: patientName,
+  }).catch(console.error)
+
+  return { success: true, message: "Hasta kaydı silindi" }
 }
 
 export async function getRecommendedDoctorAction(

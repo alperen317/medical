@@ -15,6 +15,9 @@ import {
 import { format, differenceInYears } from "date-fns"
 import { tr } from "date-fns/locale"
 import { usePatientFilterStore } from "@/store/patient-filter.store"
+import { useCurrentUser } from "@/store/session.store"
+import { can } from "@/lib/permissions"
+import { DeletePatientButton } from "@/components/patients/delete-patient-button"
 import type { PatientStatus } from "@/generated/prisma/enums"
 import type { PatientSort } from "@/lib/db/patients"
 import { cn } from "@/lib/utils"
@@ -50,6 +53,8 @@ const STATUS_VARIANTS: Record<PatientStatus, "success" | "secondary" | "destruct
 
 export default function PatientsPage() {
   const t = useT()
+  const currentUser = useCurrentUser()
+  const canDeletePatient = can(currentUser?.permissions ?? [], "patient:delete")
   const { search, statusFilter, sort, setSearch, setStatusFilter, setSort } = usePatientFilterStore()
   const [patients, setPatients] = useState<PatientRow[]>([])
   const [total, setTotal] = useState(0)
@@ -209,9 +214,13 @@ export default function PatientsPage() {
               const age = differenceInYears(new Date(), new Date(patient.dateOfBirth))
               const bloodLabel = patient.bloodType ? bloodTypeLabels[patient.bloodType] : null
               return (
-                <Link key={patient.id} href={`/patients/${patient.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-                    <CardContent className="p-4">
+                <Card key={patient.id} className="relative hover:shadow-md transition-shadow group">
+                  <Link
+                    href={`/patients/${patient.id}`}
+                    className="absolute inset-0 rounded-xl cursor-pointer"
+                    aria-label={`${patient.firstName} ${patient.lastName}`}
+                  />
+                  <CardContent className="p-4">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 shrink-0">
                           <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
@@ -264,11 +273,24 @@ export default function PatientsPage() {
                           )}
                         </div>
 
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                        {canDeletePatient && (
+                          <DeletePatientButton
+                            patientId={patient.id}
+                            patientName={`${patient.firstName} ${patient.lastName}`}
+                            variant="ghost"
+                            iconOnly
+                            className="relative z-10 h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                            onDeleted={() => {
+                              setPatients((prev) => prev.filter((p) => p.id !== patient.id))
+                              setTotal((prev) => prev - 1)
+                            }}
+                          />
+                        )}
+
+                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 pointer-events-none" />
                       </div>
                     </CardContent>
                   </Card>
-                </Link>
               )
             })}
           </div>

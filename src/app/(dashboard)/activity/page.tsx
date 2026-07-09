@@ -24,6 +24,7 @@ const ACTION_STYLE: Record<string, {
   "patient.create":           { Icon: UserPlus,    iconBg: "bg-blue-50 dark:bg-blue-950/40",       iconColor: "text-blue-600 dark:text-blue-400",       badgeVariant: "info" },
   "patient.update":           { Icon: UserCog,     iconBg: "bg-amber-50 dark:bg-amber-950/40",     iconColor: "text-amber-600 dark:text-amber-400",     badgeVariant: "warning" },
   "patient.status_change":    { Icon: UserCog,     iconBg: "bg-orange-50 dark:bg-orange-950/40",   iconColor: "text-orange-600 dark:text-orange-400",   badgeVariant: "warning" },
+  "patient.delete":           { Icon: UserMinus,   iconBg: "bg-red-50 dark:bg-red-950/40",         iconColor: "text-red-600 dark:text-red-400",         badgeVariant: "destructive" },
   "user.create":              { Icon: UserPlus,    iconBg: "bg-purple-50 dark:bg-purple-950/40",   iconColor: "text-purple-600 dark:text-purple-400",   badgeVariant: "info" },
   "user.update":              { Icon: UserCog,     iconBg: "bg-violet-50 dark:bg-violet-950/40",   iconColor: "text-violet-600 dark:text-violet-400",   badgeVariant: "secondary" },
   "user.role_change":         { Icon: ShieldCheck, iconBg: "bg-indigo-50 dark:bg-indigo-950/40",   iconColor: "text-indigo-600 dark:text-indigo-400",   badgeVariant: "info" },

@@ -24,6 +24,7 @@ import type { BrainAnalysisSummary } from "@/lib/ai/brain-tumor"
 import { PathologyPanel, TimelinePathologyViewerButton } from "@/components/ai/pathology-panel"
 import type { PathologyAnalysis } from "@/lib/ai/pathology"
 import { IntakeSummary } from "@/components/clinicalos/intake-summary"
+import { DeletePatientButton } from "@/components/patients/delete-patient-button"
 import { getPatientById } from "@/lib/db/patients"
 import { getCompletedIntakeInstanceIdForPatient, getIntakeSummaryContext } from "@/lib/db/clinicalos-intake"
 import { verifySession } from "@/lib/dal"
@@ -97,6 +98,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
   if (!patient) notFound()
 
   const canDeleteTimeline = can(session.permissions, "timeline:delete")
+  const canDeletePatient = can(session.permissions, "patient:delete")
 
   // Hasta ClinicalOS kabul sürecinden geldiyse, o sürecin özeti "Hasta Kabul
   // Formu" sekmesinde aynı bileşenle (IntakeSummary, readOnly) gösterilir.
@@ -228,6 +230,13 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
               <span className="hidden sm:inline">{t("action.edit")}</span>
             </Button>
           </Link>
+          {canDeletePatient && (
+            <DeletePatientButton
+              patientId={id}
+              patientName={`${patient.firstName} ${patient.lastName}`}
+              redirectTo="/patients"
+            />
+          )}
         </div>
       </div>
 
