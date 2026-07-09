@@ -18,12 +18,14 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { createWorkflowDefinitionAction, deleteWorkflowDefinitionAction, renameWorkflowDefinitionAction } from "@/lib/actions/workflow-studio"
 import type { WorkflowDefinitionWithCount } from "@/lib/db/workflow-studio"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
 import { format } from "date-fns"
 import { tr } from "date-fns/locale"
 
 type Props = { workflows: WorkflowDefinitionWithCount[] }
 
 function NewWorkflowDialog() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(createWorkflowDefinitionAction, {})
 
@@ -32,12 +34,12 @@ function NewWorkflowDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Workflow
+          {t("workflow.new.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Yeni Workflow Oluştur</DialogTitle>
+          <DialogTitle>{t("workflow.new.title")}</DialogTitle>
         </DialogHeader>
         <form action={action} className="space-y-4 mt-2">
           {state.message && (
@@ -46,21 +48,21 @@ function NewWorkflowDialog() {
             </div>
           )}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Ad</label>
-            <Input name="name" placeholder="Onkoloji İlk Başvuru" />
+            <label className="text-sm font-medium">{t("workflow.field.name")}</label>
+            <Input name="name" placeholder={t("workflow.field.name_placeholder")} />
             {state?.errors?.name && <p className="text-xs text-destructive">{state.errors.name[0]}</p>}
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Branş</label>
-            <Input name="branch" placeholder="onkoloji" />
+            <label className="text-sm font-medium">{t("workflow.field.branch")}</label>
+            <Input name="branch" placeholder={t("workflow.field.branch_placeholder")} />
             {state?.errors?.branch && <p className="text-xs text-destructive">{state.errors.branch[0]}</p>}
           </div>
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Vazgeç
+              {t("action.dismiss")}
             </Button>
             <Button type="submit" disabled={pending} className="flex-1">
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Oluştur"}
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("action.create")}
             </Button>
           </div>
         </form>
@@ -70,6 +72,7 @@ function NewWorkflowDialog() {
 }
 
 function RenameWorkflowDialog({ id, name }: { id: string; name: string }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(renameWorkflowDefinitionAction, {})
 
@@ -94,7 +97,7 @@ function RenameWorkflowDialog({ id, name }: { id: string; name: string }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Workflow Adını Değiştir</DialogTitle>
+          <DialogTitle>{t("workflow.rename.title")}</DialogTitle>
         </DialogHeader>
         <form action={action} className="space-y-4 mt-2">
           <input type="hidden" name="id" value={id} />
@@ -104,16 +107,16 @@ function RenameWorkflowDialog({ id, name }: { id: string; name: string }) {
             </div>
           )}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Ad</label>
+            <label className="text-sm font-medium">{t("workflow.field.name")}</label>
             <Input name="name" defaultValue={name} autoFocus />
             {state?.errors?.name && <p className="text-xs text-destructive">{state.errors.name[0]}</p>}
           </div>
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Vazgeç
+              {t("action.dismiss")}
             </Button>
             <Button type="submit" disabled={pending} className="flex-1">
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kaydet"}
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("action.save")}
             </Button>
           </div>
         </form>
@@ -123,6 +126,7 @@ function RenameWorkflowDialog({ id, name }: { id: string; name: string }) {
 }
 
 function DeleteWorkflowButton({ id, name }: { id: string; name: string }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(deleteWorkflowDefinitionAction, {})
   const formRef = useRef<HTMLFormElement>(null)
@@ -151,8 +155,8 @@ function DeleteWorkflowButton({ id, name }: { id: string; name: string }) {
       <ConfirmDialog
         open={open && !state.success}
         onOpenChange={setOpen}
-        title="Workflow'u sil"
-        description={<>&ldquo;{name}&rdquo; workflow&apos;unu silmek üzeresiniz. Bu işlem geri alınamaz.</>}
+        title={t("workflow.delete.title")}
+        description={<>&ldquo;{name}&rdquo; {t("workflow.delete.description")}</>}
         pending={pending}
         onConfirm={() => formRef.current?.requestSubmit()}
       />
@@ -161,13 +165,14 @@ function DeleteWorkflowButton({ id, name }: { id: string; name: string }) {
 }
 
 export function StudioClient({ workflows }: Props) {
+  const t = useT()
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Link href="/clinicalos/studio/forms">
           <Button variant="outline" className="gap-2">
             <FileStack className="h-4 w-4" />
-            Form Builder
+            {t("workflow.form_builder_button")}
           </Button>
         </Link>
         <NewWorkflowDialog />
@@ -191,7 +196,7 @@ export function StudioClient({ workflows }: Props) {
                 </CardTitle>
                 <div className="flex items-center gap-1 shrink-0">
                   <Badge variant={wf.status === "published" ? "success" : "outline"} className="text-xs">
-                    {wf.status === "published" ? "Yayında" : "Taslak"}
+                    {wf.status === "published" ? t("workflow.status.published") : t("workflow.status.draft")}
                   </Badge>
                   <RenameWorkflowDialog id={wf.id} name={wf.name} />
                   <DeleteWorkflowButton id={wf.id} name={wf.name} />
@@ -199,17 +204,17 @@ export function StudioClient({ workflows }: Props) {
               </div>
             </CardHeader>
             <CardContent className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">Branş: {wf.branch}</p>
-              <p className="text-xs text-muted-foreground">v{wf.version} · {wf._count.instances} örnek</p>
+              <p className="text-xs text-muted-foreground">{t("workflow.card.branch_prefix")}: {wf.branch}</p>
+              <p className="text-xs text-muted-foreground">v{wf.version} · {wf._count.instances} {t("workflow.card.instance_suffix")}</p>
               <p className="text-[10px] text-muted-foreground/60">
-                Güncelleme: {format(wf.updatedAt, "d MMM yyyy", { locale: tr })}
+                {t("workflow.card.updated_prefix")}: {format(wf.updatedAt, "d MMM yyyy", { locale: tr })}
               </p>
             </CardContent>
           </Card>
         ))}
         {workflows.length === 0 && (
           <p className="text-sm text-muted-foreground col-span-full py-8 text-center">
-            Henüz workflow tanımlanmadı.
+            {t("workflow.empty")}
           </p>
         )}
       </div>

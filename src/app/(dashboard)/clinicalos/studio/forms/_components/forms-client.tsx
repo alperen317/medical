@@ -24,25 +24,28 @@ import type { FormDefinitionRow } from "@/lib/db/workflow-studio"
 import type { FormField, FormFieldType } from "@/lib/workflow/types"
 import { cn } from "@/lib/utils"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
+import type { TranslationKey } from "@/lib/i18n/defaults"
 import { format } from "date-fns"
 import { tr } from "date-fns/locale"
 
 type Props = { forms: FormDefinitionRow[] }
 
-const FIELD_TYPE_LABELS: Record<FormFieldType, string> = {
-  text: "Metin",
-  number: "Sayı",
-  date: "Tarih",
-  boolean: "Evet/Hayır",
-  select: "Seçim",
-  textarea: "Uzun Metin",
-  file: "Dosya",
+const FIELD_TYPE_LABEL_KEYS: Record<FormFieldType, TranslationKey> = {
+  text: "field_type.text",
+  number: "field_type.number",
+  date: "field_type.date",
+  boolean: "field_type.boolean",
+  select: "field_type.select",
+  textarea: "field_type.textarea",
+  file: "field_type.file",
 }
 
 const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 
 function OptionsEditor({ options, onChange }: { options: string[]; onChange: (next: string[]) => void }) {
+  const t = useT()
   const [draft, setDraft] = useState("")
 
   const addOption = () => {
@@ -68,7 +71,7 @@ function OptionsEditor({ options, onChange }: { options: string[]; onChange: (ne
           </Badge>
         ))}
         {options.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">Henüz seçenek eklenmedi</p>
+          <p className="text-[11px] text-muted-foreground">{t("form_builder.no_options")}</p>
         )}
       </div>
       <div className="flex gap-1.5">
@@ -81,7 +84,7 @@ function OptionsEditor({ options, onChange }: { options: string[]; onChange: (ne
               addOption()
             }
           }}
-          placeholder="Seçenek ekle..."
+          placeholder={t("form_builder.add_option_placeholder")}
           className="h-7 text-xs flex-1"
         />
         <Button type="button" variant="outline" size="sm" className="h-7 px-2" onClick={addOption}>
@@ -101,19 +104,20 @@ function FieldRow({
   onChange: (next: FormField) => void
   onRemove: () => void
 }) {
+  const t = useT()
   return (
     <div className="space-y-1.5 rounded-md border p-2">
       <div className="flex items-center gap-2">
         <Input
           value={field.label}
           onChange={(e) => onChange({ ...field, label: e.target.value })}
-          placeholder="Alan etiketi"
+          placeholder={t("form_builder.field.label_placeholder")}
           className="flex-1 min-w-0"
         />
         <Input
           value={field.id}
           onChange={(e) => onChange({ ...field, id: e.target.value })}
-          placeholder="alan_id"
+          placeholder={t("form_builder.field.id_placeholder")}
           className="w-32 shrink-0 font-mono text-xs"
         />
         <select
@@ -121,8 +125,8 @@ function FieldRow({
           onChange={(e) => onChange({ ...field, type: e.target.value as FormFieldType })}
           className={cn(selectClass, "w-32 shrink-0")}
         >
-          {Object.entries(FIELD_TYPE_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
+          {Object.entries(FIELD_TYPE_LABEL_KEYS).map(([value, labelKey]) => (
+            <option key={value} value={value}>{t(labelKey)}</option>
           ))}
         </select>
         <label className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
@@ -131,7 +135,7 @@ function FieldRow({
             checked={field.required}
             onChange={(e) => onChange({ ...field, required: e.target.checked })}
           />
-          Zorunlu
+          {t("common.required_badge")}
         </label>
         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onRemove}>
           <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -154,6 +158,7 @@ function FieldsEditor({
   fields: FormField[]
   setFields: React.Dispatch<React.SetStateAction<FormField[]>>
 }) {
+  const t = useT()
   const addField = () => {
     setFields((prev) => [...prev, { id: `alan_${prev.length + 1}`, type: "text", label: "", required: false }])
   }
@@ -161,10 +166,10 @@ function FieldsEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">Alanlar</label>
+        <label className="text-sm font-medium">{t("form_builder.fields_label")}</label>
         <Button type="button" variant="outline" size="sm" onClick={addField} className="gap-1.5">
           <Plus className="h-3 w-3" />
-          Alan Ekle
+          {t("form_builder.add_field_button")}
         </Button>
       </div>
       {fields.map((field, i) => (
@@ -181,6 +186,7 @@ function FieldsEditor({
 }
 
 function NewFormDialog() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(createFormDefinitionAction, {})
   const [fields, setFields] = useState<FormField[]>([
@@ -192,12 +198,12 @@ function NewFormDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Form
+          {t("form_builder.new.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yeni Form Şablonu</DialogTitle>
+          <DialogTitle>{t("form_builder.new.title")}</DialogTitle>
         </DialogHeader>
         <form action={action} className="space-y-4 mt-2">
           {state.message && (
@@ -206,8 +212,8 @@ function NewFormDialog() {
             </div>
           )}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Ad</label>
-            <Input name="name" placeholder="Şikayet" />
+            <label className="text-sm font-medium">{t("workflow.field.name")}</label>
+            <Input name="name" placeholder={t("form_builder.field.name_placeholder")} />
             {state?.errors?.name && <p className="text-xs text-destructive">{state.errors.name[0]}</p>}
           </div>
 
@@ -216,10 +222,10 @@ function NewFormDialog() {
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Vazgeç
+              {t("action.dismiss")}
             </Button>
             <Button type="submit" disabled={pending} className="flex-1">
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Oluştur"}
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("action.create")}
             </Button>
           </div>
         </form>
@@ -229,6 +235,7 @@ function NewFormDialog() {
 }
 
 function EditFormDialog({ form }: { form: FormDefinitionRow }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(updateFormDefinitionAction, {})
   const initialFields = ((form.fields as unknown as FormField[]) ?? []).map((f) => ({ ...f }))
@@ -261,11 +268,12 @@ function EditFormDialog({ form }: { form: FormDefinitionRow }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Formu Düzenle</DialogTitle>
+          <DialogTitle>{t("form_builder.edit.title")}</DialogTitle>
         </DialogHeader>
         <p className="text-xs text-muted-foreground">
-          Kaydettiğinde yeni bir sürüm (v{form.version + 1}) oluşturulur. Bu formu zaten kullanan
-          workflow&apos;lar v{form.version} ile çalışmaya devam eder — etkilenmezler.
+          {t("form_builder.edit.version_hint")
+            .replace("{{newVersion}}", String(form.version + 1))
+            .replace("{{oldVersion}}", String(form.version))}
         </p>
         <form action={action} className="space-y-4 mt-2">
           <input type="hidden" name="rootId" value={form.rootId} />
@@ -275,7 +283,7 @@ function EditFormDialog({ form }: { form: FormDefinitionRow }) {
             </div>
           )}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Ad</label>
+            <label className="text-sm font-medium">{t("workflow.field.name")}</label>
             <Input name="name" defaultValue={form.name} />
             {state?.errors?.name && <p className="text-xs text-destructive">{state.errors.name[0]}</p>}
           </div>
@@ -285,10 +293,10 @@ function EditFormDialog({ form }: { form: FormDefinitionRow }) {
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Vazgeç
+              {t("action.dismiss")}
             </Button>
             <Button type="submit" disabled={pending} className="flex-1">
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yeni Sürüm Kaydet"}
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("form_builder.save_version_button")}
             </Button>
           </div>
         </form>
@@ -298,6 +306,7 @@ function EditFormDialog({ form }: { form: FormDefinitionRow }) {
 }
 
 function VersionHistoryDialog({ rootId, currentVersion }: { rootId: string; currentVersion: number }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [versions, setVersions] = useState<FormDefinitionRow[] | null>(null)
   const [pending, startTransition] = useTransition()
@@ -326,7 +335,7 @@ function VersionHistoryDialog({ rootId, currentVersion }: { rootId: string; curr
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Sürüm Geçmişi</DialogTitle>
+          <DialogTitle>{t("form_builder.version_history.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {pending && <Loader2 className="h-4 w-4 animate-spin mx-auto" />}
@@ -335,7 +344,7 @@ function VersionHistoryDialog({ rootId, currentVersion }: { rootId: string; curr
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
                   v{v.version}
-                  {v.isLatest && <span className="text-muted-foreground font-normal"> · güncel</span>}
+                  {v.isLatest && <span className="text-muted-foreground font-normal"> · {t("form_builder.version_history.current_suffix")}</span>}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
                   {format(v.updatedAt, "d MMM yyyy HH:mm", { locale: tr })}
@@ -357,6 +366,7 @@ function VersionHistoryDialog({ rootId, currentVersion }: { rootId: string; curr
 }
 
 function DeleteFormButton({ rootId, name }: { rootId: string; name: string }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(deleteFormDefinitionAction, {})
   const formRef = useRef<HTMLFormElement>(null)
@@ -384,8 +394,8 @@ function DeleteFormButton({ rootId, name }: { rootId: string; name: string }) {
       <ConfirmDialog
         open={open && !state.success}
         onOpenChange={setOpen}
-        title="Formu sil"
-        description={<>&ldquo;{name}&rdquo; formunu (tüm sürümleriyle) silmek üzeresiniz. Bu işlem geri alınamaz.</>}
+        title={t("form_builder.delete.title")}
+        description={<>&ldquo;{name}&rdquo; {t("form_builder.delete.description")}</>}
         pending={pending}
         onConfirm={() => formRef.current?.requestSubmit()}
       />
@@ -394,6 +404,7 @@ function DeleteFormButton({ rootId, name }: { rootId: string; name: string }) {
 }
 
 export function FormsClient({ forms }: Props) {
+  const t = useT()
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end">
@@ -426,7 +437,7 @@ export function FormsClient({ forms }: Props) {
                   </Badge>
                 ))}
                 {fields.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Alan yok</p>
+                  <p className="text-xs text-muted-foreground">{t("form_builder.no_fields")}</p>
                 )}
               </CardContent>
             </Card>
@@ -434,7 +445,7 @@ export function FormsClient({ forms }: Props) {
         })}
         {forms.length === 0 && (
           <p className="text-sm text-muted-foreground col-span-full py-8 text-center">
-            Henüz form şablonu oluşturulmadı.
+            {t("form_builder.empty")}
           </p>
         )}
       </div>

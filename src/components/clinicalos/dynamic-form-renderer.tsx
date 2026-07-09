@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { NODE_VISUALS } from "@/lib/workflow/node-visuals"
 import { cn } from "@/lib/utils"
 import type { FormField } from "@/lib/workflow/types"
+import { useT } from "@/store/translations-context"
 
 const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -20,6 +21,7 @@ type Props = {
 }
 
 export function DynamicFormRenderer({ title, fields, pending, onSubmit, initialValues }: Props) {
+  const t = useT()
   const [values, setValues] = useState<Record<string, unknown>>(() => initialValues ?? {})
 
   const setValue = (id: string, value: unknown) => setValues((prev) => ({ ...prev, [id]: value }))
@@ -79,12 +81,12 @@ export function DynamicFormRenderer({ title, fields, pending, onSubmit, initialV
                   checked={Boolean(values[field.id])}
                   onChange={(e) => setValue(field.id, e.target.checked)}
                 />
-                Evet
+                {t("common.yes")}
               </label>
             )}
             {field.type === "select" && (
               <select className={selectClass} value={(values[field.id] as string) ?? ""} onChange={(e) => setValue(field.id, e.target.value)}>
-                <option value="">— Seçiniz —</option>
+                <option value="">{t("common.select_none")}</option>
                 {(field.options ?? []).map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
@@ -92,13 +94,13 @@ export function DynamicFormRenderer({ title, fields, pending, onSubmit, initialV
             )}
             {field.type === "file" && (
               <p className="text-xs text-muted-foreground italic">
-                Bu alan için belge, workflow&apos;daki bir sonraki Belge adımında yüklenir.
+                {t("dynamic_form.file_hint")}
               </p>
             )}
           </div>
         ))}
         {fields.length === 0 && (
-          <p className="text-sm text-muted-foreground">Bu form için henüz alan tanımlanmamış.</p>
+          <p className="text-sm text-muted-foreground">{t("dynamic_form.no_fields")}</p>
         )}
       </div>
 
@@ -113,12 +115,12 @@ export function DynamicFormRenderer({ title, fields, pending, onSubmit, initialV
         )}
         <Button onClick={() => onSubmit(values)} disabled={pending || missingRequired} className="w-full gap-2">
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-          Devam Et
+          {t("document.continue_button")}
         </Button>
         <p className={cn("text-xs font-medium", missingRequired ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
           {missingRequired
-            ? "Devam etmeden önce zorunlu (*) alanları doldurun."
-            : "Tüm zorunlu alanlar tamam, devam edebilirsiniz."}
+            ? t("dynamic_form.missing_required_hint")
+            : t("dynamic_form.complete_hint")}
         </p>
       </div>
     </div>

@@ -19,6 +19,7 @@ import { DocumentStep } from "./document-step"
 import { StepTrace } from "./path-trace"
 import { IntakePatientBanner } from "./intake-patient-banner"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
 
 type Instance = NonNullable<Awaited<ReturnType<typeof getWorkflowInstanceById>>>
 
@@ -31,6 +32,7 @@ type Props = {
 }
 
 export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPath }: Props) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -79,7 +81,7 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
         <Link href="/clinicalos/intake">
           <Button variant="ghost" size="sm" className="gap-2 -ml-2">
             <ArrowLeft className="h-4 w-4" />
-            Kabul Listesi
+            {t("intake.runner.back_to_list")}
           </Button>
         </Link>
       </div>
@@ -103,7 +105,7 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                   disabled={pending}
                 >
                   <Undo2 className="h-3.5 w-3.5" />
-                  Geri
+                  {t("action.back")}
                 </Button>
               </CardHeader>
             )}
@@ -120,8 +122,8 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                       forms={forms}
                       visitedPath={visitedPath}
                       readOnly
-                      title="Kabul süreci tamamlandı — hasta doktora hazır."
-                      description="Toplanan tüm bilgiler sırasıyla aşağıda listelenmiştir."
+                      title={t("intake.summary.completed_title")}
+                      description={t("intake.summary.completed_desc")}
                     />
                   )}
 
@@ -136,8 +138,8 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                           instance={instance}
                           forms={forms}
                           visitedPath={visitedPath.slice(0, -1)}
-                          title="Son kontrol için toplanan bilgiler"
-                          description="Devam etmeden önce gözden geçirin, gerekirse düzenleyin."
+                          title={t("intake.summary.task_review_title")}
+                          description={t("intake.summary.task_review_desc")}
                         />
 
                         <div className="flex items-center gap-3">
@@ -145,9 +147,9 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                             <TaskIcon className="h-5 w-5" />
                           </div>
                           <div>
-                            <h2 className="text-base font-semibold leading-tight">{currentNode.label ?? "Görev"}</h2>
+                            <h2 className="text-base font-semibold leading-tight">{currentNode.label ?? t("intake.task.default_label")}</h2>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Kabul sürecini tamamlamak için bu adımı onaylayın.
+                              {t("intake.task.description")}
                             </p>
                           </div>
                         </div>
@@ -155,20 +157,20 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                         <div className="rounded-lg border bg-card p-3.5 space-y-3">
                           {existingCompletions.length > 0 && (
                             <div className="space-y-1 rounded-md border bg-muted/30 px-3 py-2">
-                              <p className="text-xs font-medium text-muted-foreground">Daha önce tamamlandı</p>
-                              {existingCompletions.map((t, i) => (
+                              <p className="text-xs font-medium text-muted-foreground">{t("intake.task.previously_completed")}</p>
+                              {existingCompletions.map((completion, i) => (
                                 <p key={i} className="text-xs text-muted-foreground">
-                                  {new Date(t.completedAt).toLocaleString("tr-TR")}
+                                  {new Date(completion.completedAt).toLocaleString("tr-TR")}
                                 </p>
                               ))}
                             </div>
                           )}
                           <Button onClick={completeTask} disabled={pending} className="w-full gap-2">
                             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Tamamlandı Olarak İşaretle
+                            {t("intake.task.complete_button")}
                           </Button>
                           <p className="text-xs font-medium text-muted-foreground">
-                            Onayladığınızda kabul süreci bir sonraki adıma geçer.
+                            {t("intake.task.confirm_hint")}
                           </p>
                         </div>
                       </div>
@@ -192,7 +194,7 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                       )}
 
                       {currentNode.type === "form" && !formDef && (
-                        <p className="text-sm text-destructive">Bu adıma bağlı bir form şablonu bulunamadı.</p>
+                        <p className="text-sm text-destructive">{t("intake.form.missing_template")}</p>
                       )}
 
                       {currentNode.type === "document" && (
@@ -212,7 +214,7 @@ export function IntakeRunner({ instance, currentNode, formDef, forms, visitedPat
                 </div>
 
                 <div className="xl:sticky xl:top-6 rounded-lg border bg-card p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Adımlar</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t("intake.runner.steps_panel_title")}</p>
                   <StepTrace steps={visitedPath} />
                 </div>
               </div>

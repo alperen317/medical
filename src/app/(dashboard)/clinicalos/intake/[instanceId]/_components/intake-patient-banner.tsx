@@ -1,3 +1,5 @@
+"use client"
+
 import { CalendarDays, IdCard, Phone } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -5,10 +7,9 @@ import type { getWorkflowInstanceById } from "@/lib/db/clinicalos-intake"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { tr } from "date-fns/locale"
+import { useT } from "@/store/translations-context"
 
 type Instance = NonNullable<Awaited<ReturnType<typeof getWorkflowInstanceById>>>
-
-const GENDER_LABELS: Record<string, string> = { male: "Erkek", female: "Kadın", other: "Diğer" }
 
 function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
   return (
@@ -28,6 +29,8 @@ function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: st
 // şeridi + stat satırı) — kabul akışında da hasta kimliği aynı şekilde,
 // yatay ve tam genişlikte üstte sabit kalsın diye.
 export function IntakePatientBanner({ instance }: { instance: Instance }) {
+  const t = useT()
+  const GENDER_LABELS: Record<string, string> = { male: t("gender.male"), female: t("gender.female"), other: t("gender.other") }
   const completed = instance.status === "completed"
 
   return (
@@ -48,7 +51,7 @@ export function IntakePatientBanner({ instance }: { instance: Instance }) {
                 {instance.patient.firstName} {instance.patient.lastName}
               </h1>
               <Badge variant={completed ? "success" : "info"} className="text-xs shrink-0">
-                {completed ? "Tamamlandı" : "Devam Ediyor"}
+                {completed ? t("intake.status.completed") : t("intake.status.in_progress")}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -59,14 +62,14 @@ export function IntakePatientBanner({ instance }: { instance: Instance }) {
 
         <div className="flex flex-wrap items-center gap-y-2 divide-x divide-border">
           {instance.patient.tcNo && (
-            <Stat icon={IdCard} label="TC No" value={<span className="font-mono">{instance.patient.tcNo}</span>} />
+            <Stat icon={IdCard} label={t("intake.banner.tc_no")} value={<span className="font-mono">{instance.patient.tcNo}</span>} />
           )}
           <Stat
             icon={CalendarDays}
-            label="Doğum / Cinsiyet"
+            label={t("intake.banner.dob_gender")}
             value={`${format(instance.patient.dateOfBirth, "d MMM yyyy", { locale: tr })} · ${GENDER_LABELS[instance.patient.gender] ?? instance.patient.gender}`}
           />
-          <Stat icon={Phone} label="Telefon" value={<span className="nums">{instance.patient.phone}</span>} />
+          <Stat icon={Phone} label={t("field.patient.phone")} value={<span className="nums">{instance.patient.phone}</span>} />
         </div>
       </div>
     </div>

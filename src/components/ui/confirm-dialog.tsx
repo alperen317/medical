@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { useT } from "@/store/translations-context"
 
 type Props = {
   open: boolean
@@ -34,12 +35,13 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Sil",
-  cancelLabel = "Vazgeç",
+  confirmLabel,
+  cancelLabel,
   requireTypedConfirmation,
   pending,
   onConfirm,
 }: Props) {
+  const t = useT()
   const [typed, setTyped] = useState("")
   const canConfirm = !requireTypedConfirmation || typed === requireTypedConfirmation
 
@@ -60,7 +62,7 @@ export function ConfirmDialog({
         {requireTypedConfirmation && (
           <div className="space-y-1.5">
             <label className="text-sm font-medium">
-              Onaylamak için <span className="font-semibold text-foreground">{requireTypedConfirmation}</span> yazın
+              {t("confirm.typed_confirmation_label")} <span className="font-semibold text-foreground">{requireTypedConfirmation}</span> {t("confirm.typed_confirmation_suffix")}
             </label>
             <Input
               value={typed}
@@ -74,7 +76,7 @@ export function ConfirmDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            {cancelLabel}
+            {cancelLabel ?? t("action.dismiss")}
           </Button>
           <Button
             type="button"
@@ -84,7 +86,7 @@ export function ConfirmDialog({
             className="gap-2"
           >
             {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {confirmLabel}
+            {confirmLabel ?? t("action.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

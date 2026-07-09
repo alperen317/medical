@@ -23,17 +23,19 @@ import { NODE_VISUALS } from "@/lib/workflow/node-visuals"
 import type { getWorkflowInstanceById } from "@/lib/db/clinicalos-intake"
 import type { DocumentChecklistItem, DocumentNode } from "@/lib/workflow/types"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
+import type { TranslationKey } from "@/lib/i18n/defaults"
 import { cn } from "@/lib/utils"
 
 type Instance = NonNullable<Awaited<ReturnType<typeof getWorkflowInstanceById>>>
 type WorkflowDocument = Instance["documents"][number]
 type Category = NonNullable<DocumentChecklistItem["category"]>
 
-const CATEGORY_META: Record<Category, { label: string; icon: typeof Microscope }> = {
-  patoloji: { label: "Patoloji", icon: Microscope },
-  goruntuleme: { label: "Görüntüleme", icon: Scan },
-  laboratuvar: { label: "Laboratuvar", icon: FlaskConical },
-  diger: { label: "Diğer", icon: FileText },
+const CATEGORY_META: Record<Category, { labelKey: TranslationKey; icon: typeof Microscope }> = {
+  patoloji: { labelKey: "document.category.pathology", icon: Microscope },
+  goruntuleme: { labelKey: "document.category.imaging", icon: Scan },
+  laboratuvar: { labelKey: "document.category.lab", icon: FlaskConical },
+  diger: { labelKey: "document.category.other", icon: FileText },
 }
 
 // Checklist'te karşılığı olmayan/serbest yüklemeler (checklistLabel === null)
@@ -151,6 +153,7 @@ function ChecklistItemRow({
   onUpload: (file: File) => void
   onRequestDelete: (doc: WorkflowDocument) => void
 }) {
+  const t = useT()
   const satisfied = documents.length > 0
   const missing = item.required && !satisfied
 
@@ -175,12 +178,12 @@ function ChecklistItemRow({
               </p>
               {missing && (
                 <Badge variant="warning" className="px-1.5 py-0 text-[10px] font-semibold leading-4">
-                  Zorunlu
+                  {t("common.required_badge")}
                 </Badge>
               )}
               {!item.required && (
                 <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium leading-4 text-muted-foreground">
-                  Opsiyonel
+                  {t("common.optional_badge")}
                 </Badge>
               )}
             </div>
@@ -189,7 +192,7 @@ function ChecklistItemRow({
 
         <UploadTarget compact uploading={uploading} onSelect={onUpload}>
           <Upload className="h-3 w-3" />
-          Yükle
+          {t("document.upload_button")}
         </UploadTarget>
       </div>
 
@@ -222,6 +225,7 @@ export function DocumentStep({
   pending: boolean
   onAdvance: () => void
 }) {
+  const t = useT()
   const router = useRouter()
   const [uploadingKeys, setUploadingKeys] = useState<Set<string>>(new Set())
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -258,7 +262,7 @@ export function DocumentStep({
       <div key={category}>
         <div className="flex items-center gap-1.5 px-3.5 pt-2.5">
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-          <p className="text-[11px] font-medium text-muted-foreground">{meta.label}</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{t(meta.labelKey)}</p>
         </div>
         <div className="divide-y">
           {items.map((item) => (
@@ -320,12 +324,12 @@ export function DocumentStep({
         </div>
         <div>
           <h2 className="text-base font-semibold leading-tight">
-            {title ? `${title} Belgeleri` : "Belge Yükle"}
+            {title ? `${title} ${t("document.title_suffix")}` : t("document.upload_title")}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {requiredItems.length > 0
-              ? "Her belge kaleminin kendi yükleme alanına dosyayı bırakın veya seçin."
-              : "Kabul için gereken belgeleri aşağıdan yükleyin."}
+              ? t("document.hint_with_checklist")
+              : t("document.hint_no_checklist")}
           </p>
         </div>
       </div>
@@ -335,7 +339,7 @@ export function DocumentStep({
           <div className="rounded-lg border bg-card overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 border-b bg-muted/30">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Beklenen belgeler
+                {t("document.expected_title")}
               </p>
               {requiredItems.length > 0 && (
                 <span
@@ -344,7 +348,7 @@ export function DocumentStep({
                     allRequiredUploaded ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
                   )}
                 >
-                  {uploadedRequiredCount} / {requiredItems.length} zorunlu yüklendi
+                  {uploadedRequiredCount} / {requiredItems.length} {t("document.required_uploaded_suffix")}
                 </span>
               )}
             </div>
@@ -356,7 +360,7 @@ export function DocumentStep({
 
           <div className="rounded-lg border bg-card overflow-hidden">
             <div className="px-3.5 py-2 border-b bg-muted/30">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ek belgeler</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("document.extra_title")}</p>
             </div>
             <div className="px-3.5 py-2.5 space-y-2">
               {extraDocuments.length > 0 && (
@@ -374,7 +378,7 @@ export function DocumentStep({
               <UploadTarget compact={false} uploading={uploadingKeys.has(EXTRA_KEY)} onSelect={(file) => upload(file, null)}>
                 <Paperclip className="h-4 w-4 text-muted-foreground/60" />
                 <span className="text-muted-foreground">
-                  Listede olmayan bir belge mi var? Sürükleyin veya <span className="text-primary font-medium">seçin</span>
+                  {t("document.extra_upload_hint_prefix")} <span className="text-primary font-medium">{t("document.extra_upload_hint_action")}</span>
                 </span>
               </UploadTarget>
             </div>
@@ -391,7 +395,7 @@ export function DocumentStep({
             )}
             <Button onClick={onAdvance} disabled={pending || !complete} className="w-full gap-2">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              Devam Et
+              {t("document.continue_button")}
             </Button>
             <p
               className={cn(
@@ -400,8 +404,8 @@ export function DocumentStep({
               )}
             >
               {!complete && requiredItems.length > 0
-                ? "“Zorunlu” işaretli belgelerin tümü yüklenince devam edebilirsiniz."
-                : "Tüm zorunlu belgeler tamam, devam edebilirsiniz."}
+                ? t("document.required_missing_hint")
+                : t("document.required_complete_hint")}
             </p>
           </div>
         </div>
@@ -409,7 +413,7 @@ export function DocumentStep({
         <div className="space-y-5">
           <div className="rounded-lg border bg-card overflow-hidden">
             <div className="px-3.5 py-2.5 border-b bg-muted/30">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Belgeler</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("document.plain_title")}</p>
             </div>
             <div className="px-3.5 py-2.5 space-y-2">
               {extraDocuments.length > 0 && (
@@ -427,9 +431,9 @@ export function DocumentStep({
               <UploadTarget compact={false} uploading={uploadingKeys.has(EXTRA_KEY)} onSelect={(file) => upload(file, null)}>
                 <Upload className="h-6 w-6 text-muted-foreground/60" />
                 <span className="text-muted-foreground">
-                  Dosyayı sürükleyin veya <span className="text-primary font-medium">seçin</span>
+                  {t("document.drop_hint_prefix")} <span className="text-primary font-medium">{t("document.drop_hint_action")}</span>
                 </span>
-                <span className="text-xs text-muted-foreground">Maks. 10 MB</span>
+                <span className="text-xs text-muted-foreground">{t("document.max_size_hint")}</span>
               </UploadTarget>
             </div>
           </div>
@@ -437,10 +441,10 @@ export function DocumentStep({
           <div className="rounded-lg border bg-card p-3.5 space-y-3">
             <Button onClick={onAdvance} disabled={pending || !complete} className="w-full gap-2">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              Devam Et
+              {t("document.continue_button")}
             </Button>
             <p className={cn("text-xs font-medium", !complete ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
-              {!complete ? "Devam etmeden önce en az bir belge yükleyin." : "Belge yüklendi, devam edebilirsiniz."}
+              {!complete ? t("document.at_least_one_hint") : t("document.uploaded_hint")}
             </p>
           </div>
         </div>
@@ -449,8 +453,8 @@ export function DocumentStep({
       <ConfirmDialog
         open={confirmDoc !== null}
         onOpenChange={(next) => { if (!next) setConfirmDoc(null) }}
-        title="Belgeyi sil"
-        description={<>&ldquo;{confirmDoc?.name}&rdquo; belgesini silmek üzeresiniz. Bu işlem geri alınamaz.</>}
+        title={t("document.delete.title")}
+        description={<>&ldquo;{confirmDoc?.name}&rdquo; {t("document.delete.description")}</>}
         pending={deletingId === confirmDoc?.id}
         onConfirm={() => confirmDoc && startDelete(confirmDoc.id)}
       />

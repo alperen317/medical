@@ -26,6 +26,8 @@ import { autoLayout } from "@/lib/workflow/layout"
 import { workflowNodeTypes, type WorkflowFlowNode } from "./workflow-nodes"
 import { NodePropertyPanel } from "./node-property-panel"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
+import type { TranslationKey } from "@/lib/i18n/defaults"
 
 type Props = {
   workflow: { id: string; name: string; status: string; nodes: unknown }
@@ -33,22 +35,22 @@ type Props = {
   rules: RuleDefinitionRow[]
 }
 
-const NODE_TYPE_BUTTONS: { type: WorkflowNodeType; label: string; icon: React.ElementType }[] = [
-  { type: "form", label: "Form", icon: FileInput },
-  { type: "decision", label: "Karar", icon: GitBranch },
-  { type: "document", label: "Belge", icon: FileStack },
-  { type: "task", label: "Görev", icon: ListTodo },
-  { type: "end", label: "Bitiş", icon: CheckCircle2 },
+const NODE_TYPE_BUTTONS: { type: WorkflowNodeType; labelKey: TranslationKey; icon: React.ElementType }[] = [
+  { type: "form", labelKey: "workflow.editor.node.form", icon: FileInput },
+  { type: "decision", labelKey: "workflow.editor.node.decision", icon: GitBranch },
+  { type: "document", labelKey: "workflow.editor.node.document", icon: FileStack },
+  { type: "task", labelKey: "workflow.editor.node.task", icon: ListTodo },
+  { type: "end", labelKey: "workflow.editor.node.end", icon: CheckCircle2 },
 ]
 
-function toFlowNode(node: WorkflowNode, forms: FormDefinitionRow[], rules: RuleDefinitionRow[]): WorkflowFlowNode {
+function toFlowNode(node: WorkflowNode, forms: FormDefinitionRow[], rules: RuleDefinitionRow[], t: (key: TranslationKey) => string): WorkflowFlowNode {
   const labelMap: Record<WorkflowNodeType, string> = {
     start: "Start",
-    form: "Form",
-    decision: "Karar",
-    document: "Belge",
-    task: "Görev",
-    end: "Bitiş",
+    form: t("workflow.editor.node.form"),
+    decision: t("workflow.editor.node.decision"),
+    document: t("workflow.editor.node.document"),
+    task: t("workflow.editor.node.task"),
+    end: t("workflow.editor.node.end"),
   }
   let sublabel: string | undefined
   if (node.type === "form") sublabel = forms.find((f) => f.id === node.formId)?.name ?? node.formId
@@ -67,12 +69,12 @@ function toFlowNode(node: WorkflowNode, forms: FormDefinitionRow[], rules: RuleD
 
 // Edge id ayracı "::" — node id'leri ("tani_var_mi" gibi) tire/altçizgi
 // içerebildiği için "-" ile parse etmek güvenli değil.
-function toFlowEdges(nodes: WorkflowNode[]) {
+function toFlowEdges(nodes: WorkflowNode[], t: (key: TranslationKey) => string) {
   const edges: { id: string; source: string; target: string; sourceHandle?: string; style?: React.CSSProperties; label?: string }[] = []
   for (const node of nodes) {
     if (node.type === "decision") {
-      if (node.then) edges.push({ id: `${node.id}::then`, source: node.id, target: node.then, sourceHandle: "then", style: { stroke: "#059669" }, label: "evet" })
-      if (node.else) edges.push({ id: `${node.id}::else`, source: node.id, target: node.else, sourceHandle: "else", style: { stroke: "#e11d48" }, label: "hayır" })
+      if (node.then) edges.push({ id: `${node.id}::then`, source: node.id, target: node.then, sourceHandle: "then", style: { stroke: "#059669" }, label: t("common.yes").toLowerCase() })
+      if (node.else) edges.push({ id: `${node.id}::else`, source: node.id, target: node.else, sourceHandle: "else", style: { stroke: "#e11d48" }, label: t("common.no").toLowerCase() })
     } else if (node.type !== "end" && node.next) {
       edges.push({ id: `${node.id}::next`, source: node.id, target: node.next })
     }
@@ -100,6 +102,7 @@ export function WorkflowCanvas(props: Props) {
 }
 
 function WorkflowCanvasInner({ workflow, forms, rules }: Props) {
+  const t = useT()
   const [pending, startTransition] = useTransition()
   const [publishPending, startPublishTransition] = useTransition()
 
@@ -115,11 +118,11 @@ function WorkflowCanvasInner({ workflow, forms, rules }: Props) {
   // her render'da domain'den yeniden üretilmemeli.
   const [domain, setDomain] = useState<WorkflowNode[]>(initialDomain)
   const [flowNodes, setFlowNodes] = useState<WorkflowFlowNode[]>(() =>
-    initialDomain.map((n) => toFlowNode(n, forms, rules)),
+    initialDomain.map((n) => toFlowNode(n, forms, rules, t)),
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const flowEdges = useMemo(() => toFlowEdges(domain), [domain])
+  const flowEdges = useMemo(() => toFlowEdges(domain, t), [domain, t])
   const selectedNode = domain.find((n) => n.id === selectedId) ?? null
 
   const onNodesChange = useCallback((changes: NodeChange<WorkflowFlowNode>[]) => {
@@ -167,7 +170,7 @@ function WorkflowCanvasInner({ workflow, forms, rules }: Props) {
   const updateNode = (next: WorkflowNode) => {
     setDomain((prev) => prev.map((n) => (n.id === next.id ? next : n)))
     // Property panel değişikliği node kartındaki alt etiketi de etkiler.
-    const fresh = toFlowNode(next, forms, rules)
+    const fresh = toFlowNode(next, forms, rules, t)
     setFlowNodes((prev) => prev.map((f) => (f.id === next.id ? { ...f, data: fresh.data } : f)))
   }
 
@@ -185,7 +188,7 @@ function WorkflowCanvasInner({ workflow, forms, rules }: Props) {
       default: return
     }
     setDomain((prev) => [...prev, newNode])
-    setFlowNodes((prev) => [...prev, toFlowNode(newNode, forms, rules)])
+    setFlowNodes((prev) => [...prev, toFlowNode(newNode, forms, rules, t)])
     setSelectedId(id)
   }
 
@@ -238,29 +241,29 @@ function WorkflowCanvasInner({ workflow, forms, rules }: Props) {
           <Link href="/clinicalos/studio">
             <Button variant="ghost" size="sm" className="gap-2 -ml-2">
               <ArrowLeft className="h-4 w-4" />
-              Studio
+              {t("workflow.editor.back_button")}
             </Button>
           </Link>
           <div className="h-4 w-px bg-border" />
           <p className="text-sm font-semibold truncate">{workflow.name}</p>
           <Badge variant={workflow.status === "published" ? "success" : "outline"} className="text-xs">
-            {workflow.status === "published" ? "Yayında" : "Taslak"}
+            {workflow.status === "published" ? t("workflow.status.published") : t("workflow.status.draft")}
           </Badge>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {NODE_TYPE_BUTTONS.map((btn) => (
             <Button key={btn.type} variant="outline" size="sm" className="gap-1.5" onClick={() => addNode(btn.type)}>
               <btn.icon className="h-3.5 w-3.5" />
-              {btn.label}
+              {t(btn.labelKey)}
             </Button>
           ))}
           <div className="h-4 w-px bg-border mx-1" />
           <Button variant="outline" size="sm" onClick={togglePublish} disabled={publishPending}>
-            {publishPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : workflow.status === "draft" ? "Yayınla" : "Taslağa Al"}
+            {publishPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : workflow.status === "draft" ? t("workflow.editor.publish_button") : t("workflow.editor.unpublish_button")}
           </Button>
           <Button size="sm" className="gap-1.5" onClick={save} disabled={pending}>
             {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Kaydet
+            {t("workflow.editor.save_button")}
           </Button>
         </div>
       </div>

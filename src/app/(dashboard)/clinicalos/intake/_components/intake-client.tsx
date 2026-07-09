@@ -17,6 +17,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { startIntakeAction, deleteIntakeInstanceAction } from "@/lib/actions/clinicalos-intake"
 import type { WorkflowInstanceRow } from "@/lib/db/clinicalos-intake"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
 import { format } from "date-fns"
 import { tr } from "date-fns/locale"
 
@@ -35,6 +36,7 @@ function humanizeNodeId(id: string): string {
 }
 
 function NewIntakeDialog({ workflows }: { workflows: WorkflowOption[] }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(startIntakeAction, {})
 
@@ -43,12 +45,12 @@ function NewIntakeDialog({ workflows }: { workflows: WorkflowOption[] }) {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Kabul Başlat
+          {t("intake.new.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yeni Hasta Kabulü</DialogTitle>
+          <DialogTitle>{t("intake.new.title")}</DialogTitle>
         </DialogHeader>
         <form action={action} className="space-y-4 mt-2">
           {state.message && (
@@ -58,25 +60,25 @@ function NewIntakeDialog({ workflows }: { workflows: WorkflowOption[] }) {
           )}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Workflow</label>
+            <label className="text-sm font-medium">{t("intake.new.workflow_label")}</label>
             <select name="workflowDefId" className={selectClass}>
-              <option value="">— Seçiniz —</option>
+              <option value="">{t("common.select_none")}</option>
               {workflows.map((wf) => (
                 <option key={wf.id} value={wf.id}>{wf.name} ({wf.branch})</option>
               ))}
             </select>
             {state?.errors?.workflowDefId && <p className="text-xs text-destructive">{state.errors.workflowDefId[0]}</p>}
             {workflows.length === 0 && (
-              <p className="text-xs text-muted-foreground">Yayında (published) workflow yok. Önce Workflow Studio&apos;dan bir workflow yayınlayın.</p>
+              <p className="text-xs text-muted-foreground">{t("intake.new.no_published")}</p>
             )}
           </div>
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Vazgeç
+              {t("action.dismiss")}
             </Button>
             <Button type="submit" disabled={pending} className="flex-1">
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kabulü Başlat"}
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("intake.new.submit")}
             </Button>
           </div>
         </form>
@@ -86,6 +88,7 @@ function NewIntakeDialog({ workflows }: { workflows: WorkflowOption[] }) {
 }
 
 function DeleteIntakeButton({ id, name }: { id: string; name: string }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(deleteIntakeInstanceAction, {})
   const formRef = useRef<HTMLFormElement>(null)
@@ -113,11 +116,10 @@ function DeleteIntakeButton({ id, name }: { id: string; name: string }) {
       <ConfirmDialog
         open={open && !state.success}
         onOpenChange={setOpen}
-        title="Hasta kabul kaydını sil"
+        title={t("intake.delete.title")}
         description={
           <>
-            &ldquo;{name}&rdquo; hastasının kabul kaydını ve yüklenen tüm belgelerini kalıcı olarak
-            sileceksiniz. Bu işlem geri alınamaz.
+            &ldquo;{name}&rdquo; {t("intake.delete.description")}
           </>
         }
         requireTypedConfirmation={name}
@@ -129,6 +131,7 @@ function DeleteIntakeButton({ id, name }: { id: string; name: string }) {
 }
 
 export function IntakeClient({ instances, workflows }: Props) {
+  const t = useT()
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end">
@@ -153,7 +156,7 @@ export function IntakeClient({ instances, workflows }: Props) {
                 </CardTitle>
                 <div className="flex items-center gap-1 shrink-0">
                   <Badge variant={instance.status === "completed" ? "success" : "info"} className="text-xs">
-                    {instance.status === "completed" ? "Tamamlandı" : "Devam Ediyor"}
+                    {instance.status === "completed" ? t("intake.status.completed") : t("intake.status.in_progress")}
                   </Badge>
                   <DeleteIntakeButton id={instance.id} name={`${instance.patient.firstName} ${instance.patient.lastName}`} />
                 </div>
@@ -162,17 +165,17 @@ export function IntakeClient({ instances, workflows }: Props) {
             <CardContent className="space-y-1.5">
               <p className="text-xs text-muted-foreground">{instance.workflowDef.name}</p>
               <p className="text-xs text-muted-foreground">
-                Adım: {humanizeNodeId(instance.currentNodeId)}
+                {t("intake.card.step_prefix")}: {humanizeNodeId(instance.currentNodeId)}
               </p>
               <p className="text-[10px] text-muted-foreground/60">
-                Başlangıç: {format(instance.startedAt, "d MMM yyyy HH:mm", { locale: tr })}
+                {t("intake.card.started_prefix")}: {format(instance.startedAt, "d MMM yyyy HH:mm", { locale: tr })}
               </p>
             </CardContent>
           </Card>
         ))}
         {instances.length === 0 && (
           <p className="text-sm text-muted-foreground col-span-full py-8 text-center">
-            Henüz kabul kaydı yok.
+            {t("intake.empty")}
           </p>
         )}
       </div>

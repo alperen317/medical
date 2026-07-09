@@ -16,6 +16,7 @@ import { NODE_VISUALS, BRANCH_COLORS } from "@/lib/workflow/node-visuals"
 import { DynamicFormRenderer } from "./dynamic-form-renderer"
 import { IntakeMarkdownView } from "./intake-markdown-view"
 import { toast } from "@/store/ui.store"
+import { useT } from "@/store/translations-context"
 import { cn } from "@/lib/utils"
 
 type Instance = NonNullable<Awaited<ReturnType<typeof getWorkflowInstanceById>>>
@@ -39,6 +40,7 @@ function FormSummarySection({
   answers: Record<string, unknown>
   readOnly: boolean
 }) {
+  const t = useT()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -63,7 +65,7 @@ function FormSummarySection({
         {!editing && !readOnly && (
           <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-muted-foreground" onClick={() => setEditing(true)}>
             <Pencil className="h-3 w-3" />
-            Düzenle
+            {t("action.edit")}
           </Button>
         )}
       </div>
@@ -73,7 +75,7 @@ function FormSummarySection({
           <DynamicFormRenderer title="" fields={fields} pending={pending} onSubmit={submit} initialValues={answers} />
           <Button variant="ghost" size="sm" className="mt-1 h-7 gap-1.5 text-xs text-muted-foreground" onClick={() => setEditing(false)} disabled={pending}>
             <X className="h-3 w-3" />
-            Vazgeç
+            {t("action.dismiss")}
           </Button>
         </div>
       ) : (
@@ -84,7 +86,7 @@ function FormSummarySection({
               <dd className="text-sm truncate">{fieldValueLabel(field, answers[field.id])}</dd>
             </div>
           ))}
-          {fields.length === 0 && <p className="text-xs text-muted-foreground">Alan yok</p>}
+          {fields.length === 0 && <p className="text-xs text-muted-foreground">{t("form_builder.no_fields")}</p>}
         </dl>
       )}
     </div>
@@ -104,6 +106,7 @@ function DocumentSummarySection({
   documents: Instance["documents"]
   readOnly: boolean
 }) {
+  const t = useT()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -187,14 +190,14 @@ function DocumentSummarySection({
             </div>
           </div>
         ))}
-        {documents.length === 0 && <p className="text-xs text-muted-foreground">Belge yok</p>}
+        {documents.length === 0 && <p className="text-xs text-muted-foreground">{t("intake.summary.no_documents_short")}</p>}
 
         {!readOnly && (
           <div className="flex items-center gap-2 pt-1">
             <input ref={fileInputRef} type="file" className="text-xs flex-1 min-w-0" />
             <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs shrink-0" onClick={upload} disabled={uploading}>
               {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-              Ekle
+              {t("intake.summary.add_button")}
             </Button>
           </div>
         )}
@@ -203,8 +206,8 @@ function DocumentSummarySection({
       <ConfirmDialog
         open={confirmDoc !== null}
         onOpenChange={(next) => { if (!next) setConfirmDoc(null) }}
-        title="Belgeyi sil"
-        description={<>&ldquo;{confirmDoc?.name}&rdquo; belgesini silmek üzeresiniz. Bu işlem geri alınamaz.</>}
+        title={t("document.delete.title")}
+        description={<>&ldquo;{confirmDoc?.name}&rdquo; {t("document.delete.description")}</>}
         pending={deletingId === confirmDoc?.id}
         onConfirm={() => confirmDoc && startDelete(confirmDoc.id)}
       />
@@ -213,6 +216,7 @@ function DocumentSummarySection({
 }
 
 function TaskSummarySection({ title, entries }: { title: string; entries: { completedAt: string }[] }) {
+  const t = useT()
   return (
     <div className="rounded-lg border bg-card">
       <div className="px-3.5 py-2.5 border-b flex items-center gap-2">
@@ -223,10 +227,10 @@ function TaskSummarySection({ title, entries }: { title: string; entries: { comp
         {entries.map((entry, i) => (
           <p key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
             <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-            Tamamlandı: {new Date(entry.completedAt).toLocaleString("tr-TR")}
+            {t("intake.status.completed")}: {new Date(entry.completedAt).toLocaleString("tr-TR")}
           </p>
         ))}
-        {entries.length === 0 && <p className="text-xs text-muted-foreground">Kayıt yok</p>}
+        {entries.length === 0 && <p className="text-xs text-muted-foreground">{t("intake.summary.no_records")}</p>}
       </div>
     </div>
   )
@@ -247,6 +251,7 @@ export function IntakeSummary({
   title?: string
   description?: string
 }) {
+  const t = useT()
   const answers = instance.answers as Record<string, unknown>
   const tasks = Array.isArray(instance.tasks) ? (instance.tasks as { nodeId: string; completedAt: string }[]) : []
 
@@ -282,7 +287,7 @@ export function IntakeSummary({
                   <Icon className="h-3 w-3" />
                   <span>{humanizeDecision(step.node.id)}</span>
                   <span className={cn("font-bold px-1.5 py-0.5 rounded-full", colors.bg, colors.text)}>
-                    {step.branch === "then" ? "✓ Evet" : "✓ Hayır"}
+                    {step.branch === "then" ? `✓ ${t("common.yes")}` : `✓ ${t("common.no")}`}
                   </span>
                 </div>
               )
@@ -309,7 +314,11 @@ export function IntakeSummary({
                   key={`${step.node.id}-${i}`}
                   instanceId={instance.id}
                   nodeId={step.node.id}
-                  title={documentTypeLabel(step.node.documentType) ? `Belge — ${documentTypeLabel(step.node.documentType)}` : "Belge"}
+                  title={
+                    documentTypeLabel(step.node.documentType)
+                      ? `${t("intake.summary.document_section_prefix")} — ${documentTypeLabel(step.node.documentType)}`
+                      : t("intake.summary.document_section_prefix")
+                  }
                   documents={instance.documents.filter((d) => d.nodeId === step.node.id)}
                   readOnly={readOnly}
                 />
@@ -320,8 +329,8 @@ export function IntakeSummary({
               return (
                 <TaskSummarySection
                   key={`${step.node.id}-${i}`}
-                  title={step.node.label ?? "Görev"}
-                  entries={tasks.filter((t) => t.nodeId === step.node.id)}
+                  title={step.node.label ?? t("intake.task.default_label")}
+                  entries={tasks.filter((task) => task.nodeId === step.node.id)}
                 />
               )
             }
@@ -333,7 +342,7 @@ export function IntakeSummary({
 
       <p className="text-[11px] text-muted-foreground text-center pt-1 flex items-center justify-center gap-1.5">
         <FileStack className="h-3 w-3" />
-        {instance.documents.length} belge · {Object.keys(answers).length} form cevabı
+        {instance.documents.length} {t("intake.summary.document_count_suffix")} · {Object.keys(answers).length} {t("intake.summary.answer_count_suffix")}
       </p>
     </div>
   )
