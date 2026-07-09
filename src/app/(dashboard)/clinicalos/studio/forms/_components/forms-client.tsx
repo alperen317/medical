@@ -395,7 +395,7 @@ function DeleteFormButton({ rootId, name }: { rootId: string; name: string }) {
         open={open && !state.success}
         onOpenChange={setOpen}
         title={t("form_builder.delete.title")}
-        description={<>&ldquo;{name}&rdquo; {t("form_builder.delete.description")}</>}
+        description={t("form_builder.delete.description").replace("{{name}}", name)}
         pending={pending}
         onConfirm={() => formRef.current?.requestSubmit()}
       />

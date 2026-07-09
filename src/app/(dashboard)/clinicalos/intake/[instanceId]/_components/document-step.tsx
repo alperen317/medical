@@ -454,7 +454,7 @@ export function DocumentStep({
         open={confirmDoc !== null}
         onOpenChange={(next) => { if (!next) setConfirmDoc(null) }}
         title={t("document.delete.title")}
-        description={<>&ldquo;{confirmDoc?.name}&rdquo; {t("document.delete.description")}</>}
+        description={t("document.delete.description").replace("{{name}}", confirmDoc?.name ?? "")}
         pending={deletingId === confirmDoc?.id}
         onConfirm={() => confirmDoc && startDelete(confirmDoc.id)}
       />

@@ -117,11 +117,7 @@ function DeleteIntakeButton({ id, name }: { id: string; name: string }) {
         open={open && !state.success}
         onOpenChange={setOpen}
         title={t("intake.delete.title")}
-        description={
-          <>
-            &ldquo;{name}&rdquo; {t("intake.delete.description")}
-          </>
-        }
+        description={t("intake.delete.description").replace("{{name}}", name)}
         requireTypedConfirmation={name}
         pending={pending}
         onConfirm={() => formRef.current?.requestSubmit()}

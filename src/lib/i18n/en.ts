@@ -350,6 +350,11 @@ export const EN_TRANSLATIONS = {
   "my_patients.empty.no_match": "No patients match the search criteria",
   "my_patients.empty.none": "No patients assigned to you yet",
 
+  // Patient — Delete
+  "patient.delete.title": "Delete patient record",
+  "patient.delete.description": "You are about to permanently delete the record for “{{name}}” and all their clinical history (timeline, diagnoses, prescriptions, appointments). This action cannot be undone.",
+  "patient.delete.success": "Patient record deleted",
+
   // Activity — Actions
   "activity.action.auth.login": "Logged in",
   "activity.action.auth.logout": "Logged out",
@@ -497,7 +502,7 @@ export const EN_TRANSLATIONS = {
   "intake.new.no_published": "No published workflow available. Publish a workflow from Workflow Studio first.",
   "intake.new.submit": "Start Intake",
   "intake.delete.title": "Delete intake record",
-  "intake.delete.description": "You are about to permanently delete the intake record and all uploaded documents for",
+  "intake.delete.description": "You are about to permanently delete the intake record and all uploaded documents for “{{name}}”. This action cannot be undone.",
   "intake.status.completed": "Completed",
   "intake.status.in_progress": "In Progress",
   "intake.card.step_prefix": "Step",
@@ -550,7 +555,7 @@ export const EN_TRANSLATIONS = {
   "document.uploaded_hint": "Document uploaded, you can continue.",
   "document.upload_button": "Upload",
   "document.delete.title": "Delete document",
-  "document.delete.description": "You are about to delete the document. This action cannot be undone.",
+  "document.delete.description": "You are about to delete the document “{{name}}”. This action cannot be undone.",
   "document.category.pathology": "Pathology",
   "document.category.imaging": "Imaging",
   "document.category.lab": "Laboratory",
@@ -565,7 +570,7 @@ export const EN_TRANSLATIONS = {
   "workflow.field.branch_placeholder": "oncology",
   "workflow.rename.title": "Rename Workflow",
   "workflow.delete.title": "Delete workflow",
-  "workflow.delete.description": "You are about to delete the workflow. This action cannot be undone.",
+  "workflow.delete.description": "You are about to delete the workflow “{{name}}”. This action cannot be undone.",
   "workflow.status.published": "Published",
   "workflow.status.draft": "Draft",
   "workflow.card.branch_prefix": "Branch",
@@ -623,7 +628,7 @@ export const EN_TRANSLATIONS = {
   "form_builder.version_history.title": "Version History",
   "form_builder.version_history.current_suffix": "current",
   "form_builder.delete.title": "Delete form",
-  "form_builder.delete.description": "You are about to delete the form (with all its versions). This action cannot be undone.",
+  "form_builder.delete.description": "You are about to delete the form “{{name}}” (with all its versions). This action cannot be undone.",
   "form_builder.no_fields": "No fields",
   "form_builder.empty": "No form templates created yet.",
 

@@ -156,7 +156,7 @@ function DeleteWorkflowButton({ id, name }: { id: string; name: string }) {
         open={open && !state.success}
         onOpenChange={setOpen}
         title={t("workflow.delete.title")}
-        description={<>&ldquo;{name}&rdquo; {t("workflow.delete.description")}</>}
+        description={t("workflow.delete.description").replace("{{name}}", name)}
         pending={pending}
         onConfirm={() => formRef.current?.requestSubmit()}
       />

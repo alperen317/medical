@@ -350,6 +350,11 @@ export const DEFAULT_TRANSLATIONS = {
   "my_patients.empty.no_match": "Arama kriterine uygun hasta bulunamadı",
   "my_patients.empty.none": "Henüz size atanmış hasta yok",
 
+  // Patient — Delete
+  "patient.delete.title": "Hasta kaydını sil",
+  "patient.delete.description": "“{{name}}” hastasının kaydını ve tüm klinik geçmişini (zaman çizelgesi, tanılar, reçeteler, randevular) kalıcı olarak sileceksiniz. Bu işlem geri alınamaz.",
+  "patient.delete.success": "Hasta kaydı silindi",
+
   // Activity — Actions
   "activity.action.auth.login": "Giriş yaptı",
   "activity.action.auth.logout": "Çıkış yaptı",
@@ -497,7 +502,7 @@ export const DEFAULT_TRANSLATIONS = {
   "intake.new.no_published": "Yayında (published) workflow yok. Önce Workflow Studio'dan bir workflow yayınlayın.",
   "intake.new.submit": "Kabulü Başlat",
   "intake.delete.title": "Hasta kabul kaydını sil",
-  "intake.delete.description": "hastasının kabul kaydını ve yüklenen tüm belgelerini kalıcı olarak sileceksiniz. Bu işlem geri alınamaz.",
+  "intake.delete.description": "“{{name}}” hastasının kabul kaydını ve yüklenen tüm belgelerini kalıcı olarak sileceksiniz. Bu işlem geri alınamaz.",
   "intake.status.completed": "Tamamlandı",
   "intake.status.in_progress": "Devam Ediyor",
   "intake.card.step_prefix": "Adım",
@@ -550,7 +555,7 @@ export const DEFAULT_TRANSLATIONS = {
   "document.uploaded_hint": "Belge yüklendi, devam edebilirsiniz.",
   "document.upload_button": "Yükle",
   "document.delete.title": "Belgeyi sil",
-  "document.delete.description": "belgesini silmek üzeresiniz. Bu işlem geri alınamaz.",
+  "document.delete.description": "“{{name}}” belgesini silmek üzeresiniz. Bu işlem geri alınamaz.",
   "document.category.pathology": "Patoloji",
   "document.category.imaging": "Görüntüleme",
   "document.category.lab": "Laboratuvar",
@@ -565,7 +570,7 @@ export const DEFAULT_TRANSLATIONS = {
   "workflow.field.branch_placeholder": "onkoloji",
   "workflow.rename.title": "Workflow Adını Değiştir",
   "workflow.delete.title": "Workflow'u sil",
-  "workflow.delete.description": "workflow'unu silmek üzeresiniz. Bu işlem geri alınamaz.",
+  "workflow.delete.description": "“{{name}}” workflow'unu silmek üzeresiniz. Bu işlem geri alınamaz.",
   "workflow.status.published": "Yayında",
   "workflow.status.draft": "Taslak",
   "workflow.card.branch_prefix": "Branş",
@@ -623,7 +628,7 @@ export const DEFAULT_TRANSLATIONS = {
   "form_builder.version_history.title": "Sürüm Geçmişi",
   "form_builder.version_history.current_suffix": "güncel",
   "form_builder.delete.title": "Formu sil",
-  "form_builder.delete.description": "formunu (tüm sürümleriyle) silmek üzeresiniz. Bu işlem geri alınamaz.",
+  "form_builder.delete.description": "“{{name}}” formunu (tüm sürümleriyle) silmek üzeresiniz. Bu işlem geri alınamaz.",
   "form_builder.no_fields": "Alan yok",
   "form_builder.empty": "Henüz form şablonu oluşturulmadı.",
 
