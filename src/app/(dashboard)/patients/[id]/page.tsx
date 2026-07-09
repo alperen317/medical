@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Phone, Mail, MapPin, AlertTriangle,
   FileText, Pill, TestTube, Stethoscope, StickyNote,
-  Clipboard, Clock, ArrowLeft, Pencil, Brain, FlaskConical, Microscope,
+  Clipboard, ClipboardCheck, Clock, ArrowLeft, Pencil, Brain, FlaskConical, Microscope,
 } from "lucide-react"
 import { CopyButton } from "./_components/copy-button"
 import { PatientActions } from "./_components/patient-actions"
@@ -23,7 +23,9 @@ import { BrainTumorPanel, TimelineBrainViewerButton } from "@/components/ai/brai
 import type { BrainAnalysisSummary } from "@/lib/ai/brain-tumor"
 import { PathologyPanel, TimelinePathologyViewerButton } from "@/components/ai/pathology-panel"
 import type { PathologyAnalysis } from "@/lib/ai/pathology"
+import { IntakeSummary } from "@/components/clinicalos/intake-summary"
 import { getPatientById } from "@/lib/db/patients"
+import { getCompletedIntakeInstanceIdForPatient, getIntakeSummaryContext } from "@/lib/db/clinicalos-intake"
 import { verifySession } from "@/lib/dal"
 import { can } from "@/lib/permissions"
 import type { TimelineEventType } from "@/generated/prisma/enums"
@@ -64,6 +66,26 @@ const DOC_VARIANT_STYLES = {
   pathology: { icon: Microscope,   color: "text-violet-600 dark:text-violet-400",   bgColor: "bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900/60",   label: "Patoloji" },
 }
 
+function EmptyState({
+  icon: Icon,
+  title,
+  hint,
+}: {
+  icon: React.ElementType
+  title: string
+  hint?: string
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center gap-2.5">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+        <Icon className="h-5 w-5 text-muted-foreground/50" />
+      </span>
+      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+      {hint && <p className="text-xs text-muted-foreground/70 max-w-xs">{hint}</p>}
+    </div>
+  )
+}
+
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>
 }
@@ -76,6 +98,11 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
 
   const canDeleteTimeline = can(session.permissions, "timeline:delete")
 
+  // Hasta ClinicalOS kabul sürecinden geldiyse, o sürecin özeti "Hasta Kabul
+  // Formu" sekmesinde aynı bileşenle (IntakeSummary, readOnly) gösterilir.
+  const intakeInstanceId = await getCompletedIntakeInstanceIdForPatient(id)
+  const intakeContext = intakeInstanceId ? await getIntakeSummaryContext(intakeInstanceId) : null
+
   const age = differenceInYears(new Date(), patient.dateOfBirth)
   const bloodLabel = patient.bloodType ? bloodTypeLabels[patient.bloodType] : null
   const genderLabel =
@@ -84,6 +111,13 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
     t("gender.other")
 
   const tcNoLabel = patient.tcNo ?? "—"
+
+  const statusLabel =
+    patient.status === "active" ? t("status.patient.active") :
+    patient.status === "critical" ? t("status.patient.critical") :
+    patient.status === "inactive" ? t("status.patient.inactive") :
+    patient.status === "discharged" ? t("status.patient.discharged") :
+    patient.status
 
   const eventLabels: Record<TimelineEventType, string> = {
     visit:        t("timeline.type.visit"),
@@ -204,6 +238,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
           lastName={patient.lastName}
           doctorName={patient.assignedDoctor?.name}
           status={patient.status}
+          statusLabel={statusLabel}
           tcNo={tcNoLabel}
           age={age}
           genderLabel={genderLabel}
@@ -232,10 +267,15 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
             <PatientActions patientId={id} variant="sidebar" />
 
             {/* İletişim */}
-            <Card>
-              <CardHeader className="pb-2 px-5 pt-4">
-                <CardTitle className="text-sm font-semibold">İletişim</CardTitle>
-              </CardHeader>
+            <Card className="animate-in-up" style={{ animationDelay: "60ms" }}>
+                <CardHeader className="pb-2 px-5 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <Phone className="h-3.5 w-3.5" />
+                    </span>
+                    İletişim
+                  </CardTitle>
+                </CardHeader>
               <CardContent className="px-5 pb-4 space-y-1.5">
                 <div className="group flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Phone className="h-3 w-3 shrink-0" />
@@ -289,14 +329,16 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
 
             {/* Alerjiler */}
             {patient.allergies.length > 0 && (
-              <Card className="overflow-hidden border-l-4 border-l-amber-400 dark:border-l-amber-600">
-                <CardContent className="bg-amber-50 dark:bg-amber-950/40 px-5 py-4">
-                  <div className="flex items-center gap-1.5 mb-2.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
-                      {t("patient.detail.allergies")}
-                    </p>
-                  </div>
+              <Card className="overflow-hidden animate-in-up border-l-4 border-l-amber-400 dark:border-l-amber-600" style={{ animationDelay: "90ms" }}>
+                <CardHeader className="pb-2 px-5 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    </span>
+                    {t("patient.detail.allergies")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="bg-amber-50/60 dark:bg-amber-950/30 px-5 pb-4 -mt-1">
                   <div className="flex flex-wrap gap-1.5">
                     {patient.allergies.map((a) => (
                       <span
@@ -313,9 +355,14 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
 
             {/* Kronik hastalıklar */}
             {patient.chronicConditions.length > 0 && (
-              <Card>
+              <Card className="animate-in-up" style={{ animationDelay: "120ms" }}>
                 <CardHeader className="pb-2 px-5 pt-4">
-                  <CardTitle className="text-sm font-semibold">{t("field.patient.chronic_conditions")}</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <Clipboard className="h-3.5 w-3.5" />
+                    </span>
+                    {t("field.patient.chronic_conditions")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="px-5 pb-4">
                   <div className="flex flex-wrap gap-1.5">
@@ -328,15 +375,20 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
             )}
 
             {/* Aktif tanılar */}
-            <Card>
-              <CardHeader className="pb-2 px-5 pt-4">
-                <CardTitle className="text-sm font-semibold">{t("patient.detail.active_diagnoses")}</CardTitle>
-              </CardHeader>
+            <Card className="animate-in-up" style={{ animationDelay: "150ms" }}>
+                <CardHeader className="pb-2 px-5 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <Stethoscope className="h-3.5 w-3.5" />
+                    </span>
+                    {t("patient.detail.active_diagnoses")}
+                  </CardTitle>
+                </CardHeader>
               <CardContent className="px-5 pb-4 space-y-2">
                 {patient.diagnoses.map((d) => (
                   <div
                     key={d.id}
-                    className={`rounded-md border-l-[3px] bg-muted/30 px-3 py-2.5 ${
+                    className={`rounded-lg border-l-[3px] bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/50 ${
                       d.severity === "severe"
                         ? "border-l-red-500"
                         : d.severity === "moderate"
@@ -363,16 +415,18 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                   </div>
                 ))}
                 {patient.diagnoses.length === 0 && (
-                  <p className="text-sm text-muted-foreground py-2">{t("patient.detail.no_diagnoses")}</p>
+                  <EmptyState icon={Stethoscope} title={t("patient.detail.no_diagnoses")} />
                 )}
               </CardContent>
             </Card>
 
             {/* Reçeteler — aktif tanıların altında */}
-            <Card>
+            <Card className="animate-in-up" style={{ animationDelay: "180ms" }}>
               <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-1.5 min-w-0">
-                  <Pill className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 min-w-0">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400">
+                    <Pill className="h-3.5 w-3.5" />
+                  </span>
                   <span className="truncate">
                     {patient.prescriptions.length > 0
                       ? `${patient.prescriptions.length} ${t("patient.detail.tab.prescriptions").toLowerCase()}`
@@ -402,22 +456,39 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                   </div>
                 ))}
                 {patient.prescriptions.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-4">
-                    {t("patient.detail.no_prescriptions")}
-                  </p>
+                  <EmptyState icon={Pill} title={t("patient.detail.no_prescriptions")} />
                 )}
               </CardContent>
             </Card>
           </div>
 
           {/* Ana içerik — sekmeler */}
-          <div className="lg:col-span-3">
-            <Tabs defaultValue="timeline" className="flex flex-col">
-              <TabsList className="w-full shrink-0">
-                <TabsTrigger value="timeline" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.timeline")}</TabsTrigger>
-                <TabsTrigger value="documents" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.documents")}</TabsTrigger>
-                <TabsTrigger value="brainmri" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.brainmri")}</TabsTrigger>
-                <TabsTrigger value="pathology" className="flex-1 min-w-0 truncate px-2 sm:px-3 text-xs sm:text-sm">{t("patient.detail.tab.pathology")}</TabsTrigger>
+          <div className="lg:col-span-3 animate-in-up" style={{ animationDelay: "200ms" }}>
+            <Tabs defaultValue={intakeContext ? "intake" : "timeline"} className="flex flex-col">
+              <TabsList className="w-full shrink-0 p-1">
+                   {intakeContext && (
+                  <TabsTrigger value="intake" className="flex-1 min-w-0 gap-1.5 truncate px-2 sm:px-3 text-xs sm:text-sm">
+                    <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
+                    Hasta Kabul Formu
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="timeline" className="flex-1 min-w-0 gap-1.5 truncate px-2 sm:px-3 text-xs sm:text-sm">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  {t("patient.detail.tab.timeline")}
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex-1 min-w-0 gap-1.5 truncate px-2 sm:px-3 text-xs sm:text-sm">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  {t("patient.detail.tab.documents")}
+                </TabsTrigger>
+                <TabsTrigger value="brainmri" className="flex-1 min-w-0 gap-1.5 truncate px-2 sm:px-3 text-xs sm:text-sm">
+                  <Brain className="h-3.5 w-3.5 shrink-0" />
+                  {t("patient.detail.tab.brainmri")}
+                </TabsTrigger>
+                <TabsTrigger value="pathology" className="flex-1 min-w-0 gap-1.5 truncate px-2 sm:px-3 text-xs sm:text-sm">
+                  <Microscope className="h-3.5 w-3.5 shrink-0" />
+                  {t("patient.detail.tab.pathology")}
+                </TabsTrigger>
+             
               </TabsList>
 
               {/* Zaman çizelgesi */}
@@ -448,10 +519,10 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                             const label = docVariant?.label ?? eventLabels[type]
                             return (
                               <div key={event.id} className="relative flex gap-2.5 sm:gap-4 group">
-                                <div className={`relative z-10 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background ${style.bgColor}`}>
+                                <div className={`relative z-10 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background shadow-sm ${style.bgColor}`}>
                                   <Icon className={`h-4 w-4 ${style.color}`} />
                                 </div>
-                                <div className={`flex-1 min-w-0 rounded-lg border p-2.5 sm:p-3 ${style.bgColor} mb-2`}>
+                                <div className={`flex-1 min-w-0 rounded-xl border p-2.5 sm:p-3 shadow-sm transition-shadow hover:shadow-md ${style.bgColor} mb-2`}>
                                   <div className="flex items-start justify-between gap-2 flex-wrap">
                                     <div>
                                       <p className="font-semibold text-sm">{event.title}</p>
@@ -541,9 +612,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                             )
                           })}
                           {patient.timelineEvents.length === 0 && (
-                            <p className="text-center text-sm text-muted-foreground py-8">
-                              {t("patient.detail.no_timeline")}
-                            </p>
+                            <EmptyState icon={Clock} title={t("patient.detail.no_timeline")} />
                           )}
                         </div>
                       </div>
@@ -583,6 +652,23 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                   initialAnalyses={pathologyAnalyses}
                 />
               </TabsContent>
+
+              {/* Hasta Kabul Formu — ClinicalOS kabul sürecinde toplanan bilgilerin
+                  özeti, aynı IntakeSummary bileşeniyle (readOnly) birebir. */}
+              {intakeContext && (
+                <TabsContent value="intake" className="mt-2">
+                  <Card>
+                    <CardContent className="p-4">
+                      <IntakeSummary
+                        instance={intakeContext.instance}
+                        forms={intakeContext.forms}
+                        visitedPath={intakeContext.visitedPath}
+                        readOnly
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </div>

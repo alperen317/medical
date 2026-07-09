@@ -9,7 +9,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
 import {
-  Plus, Stethoscope, Loader2, X,
+  Plus, Stethoscope, Loader2, X, Zap,
   Microscope, Pill, FileText, Paperclip, ClipboardList, FlaskConical, Calendar,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -113,7 +113,12 @@ export function PatientActions({
       {variant === "sidebar" ? (
         <Card>
           <CardHeader className="pb-2 px-5 pt-4">
-            <CardTitle className="text-sm font-semibold">Hızlı Aksiyonlar</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Zap className="h-3.5 w-3.5" />
+              </span>
+              Hızlı Aksiyonlar
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-5 pb-4 grid grid-cols-2 gap-2">
             {SIDEBAR_ACTIONS.map((v) => {

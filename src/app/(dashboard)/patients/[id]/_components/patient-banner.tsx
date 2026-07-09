@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Droplets, User, IdCard } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Droplets, User, IdCard, Stethoscope } from "lucide-react"
 import type { PatientStatus } from "@/generated/prisma/enums"
 import { cn } from "@/lib/utils"
 
@@ -9,6 +10,13 @@ const STATUS_STRIPE: Record<PatientStatus, string> = {
   critical:   "bg-red-500",
   inactive:   "bg-slate-400",
   discharged: "bg-blue-500",
+}
+
+const STATUS_BADGE: Record<PatientStatus, "success" | "destructive" | "secondary" | "outline"> = {
+  active:     "success",
+  critical:   "destructive",
+  inactive:   "secondary",
+  discharged: "outline",
 }
 
 function Stat({
@@ -24,7 +32,9 @@ function Stat({
 }) {
   return (
     <div className="flex items-center gap-2.5 px-4">
-      <Icon className={cn("h-4 w-4 shrink-0", accent ? "text-red-500" : "text-muted-foreground")} />
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+        <Icon className={cn("h-4 w-4", accent ? "text-red-500" : "text-muted-foreground")} />
+      </span>
       <div className="min-w-0">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
           {label}
@@ -42,6 +52,7 @@ export function PatientBanner({
   lastName,
   doctorName,
   status,
+  statusLabel,
   tcNo,
   age,
   genderLabel,
@@ -52,6 +63,7 @@ export function PatientBanner({
   lastName: string
   doctorName?: string | null
   status: PatientStatus
+  statusLabel: string
   tcNo: string
   age: number
   genderLabel: string
@@ -59,28 +71,42 @@ export function PatientBanner({
   labels: { tcNo: string; ageGender: string; bloodType: string; ageUnit: string }
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-card">
+    <div className="relative overflow-hidden rounded-2xl border bg-card shadow-sm animate-in-up">
       {/* Durum renk şeridi */}
-      <div className={cn("absolute inset-y-0 left-0 w-1", STATUS_STRIPE[status])} />
+      <div className={cn("absolute inset-y-0 left-0 w-1.5", STATUS_STRIPE[status])} />
 
-      <div className="flex flex-col gap-4 pl-6 pr-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Hafif degrade arka plan aksanı */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-primary/5 blur-2xl"
+      />
+
+      <div className="relative flex flex-col gap-4 pl-6 pr-5 py-5 sm:flex-row sm:items-center sm:justify-between">
         {/* Kimlik */}
-        <div className="flex items-center gap-3 min-w-0">
-          <Avatar className="h-12 w-12 shrink-0">
-            <AvatarFallback className="text-base font-bold bg-primary/10 text-primary">
+        <div className="flex items-center gap-4 min-w-0">
+          <Avatar className="h-14 w-14 shrink-0 ring-2 ring-primary/15 ring-offset-2 ring-offset-card">
+            <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
               {firstName[0]}{lastName[0]}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <h1 className="text-lg font-bold leading-tight truncate">{firstName} {lastName}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-bold leading-tight truncate">{firstName} {lastName}</h1>
+              <Badge variant={STATUS_BADGE[status]} className="shrink-0">
+                {statusLabel}
+              </Badge>
+            </div>
             {doctorName && (
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{doctorName}</p>
+              <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1 truncate">
+                <Stethoscope className="h-3 w-3 shrink-0" />
+                {doctorName}
+              </p>
             )}
           </div>
         </div>
 
         {/* Stat kümesi */}
-        <div className="flex flex-wrap items-center gap-y-3 divide-x divide-border sm:justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:divide-x sm:divide-border sm:justify-end">
           <Stat icon={IdCard} label={labels.tcNo} value={<span className="font-mono">{tcNo}</span>} />
           <Stat icon={User} label={labels.ageGender} value={`${age} ${labels.ageUnit} · ${genderLabel}`} />
           {bloodLabel && <Stat icon={Droplets} label={labels.bloodType} value={bloodLabel} accent />}

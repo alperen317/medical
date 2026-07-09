@@ -19,6 +19,9 @@ export const ALL_PERMISSIONS = [
   "user:update",
   "user:delete",
   "settings:manage",
+  "workflow:manage",
+  "intake:execute",
+  "workspace:view",
 ] as const
 
 export type Permission = (typeof ALL_PERMISSIONS)[number]
@@ -52,6 +55,10 @@ export const PERMISSION_CATEGORIES: { label: string; permissions: Permission[] }
     label: "Sistem",
     permissions: ["settings:manage"],
   },
+  {
+    label: "ClinicalOS",
+    permissions: ["workflow:manage", "intake:execute", "workspace:view"],
+  },
 ]
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
@@ -75,6 +82,9 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "user:update": "Kullanıcı Düzenleme",
   "user:delete": "Kullanıcı Silme",
   "settings:manage": "Sistem Ayarları",
+  "workflow:manage": "Workflow Studio (Oluşturma/Düzenleme)",
+  "intake:execute": "Hasta Kabul (Intake) Akışı",
+  "workspace:view": "Doctor Workspace Görüntüleme",
 }
 
 export function can(permissions: string[], permission: Permission): boolean {

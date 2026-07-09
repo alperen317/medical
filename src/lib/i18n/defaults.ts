@@ -10,6 +10,9 @@ export const DEFAULT_TRANSLATIONS = {
   "nav.users": "Kullanıcılar",
   "nav.departments": "Departmanlar",
   "nav.roles": "Roller & Yetkiler",
+  "nav.workflow_studio": "Workflow Studio",
+  "nav.form_builder": "Form Builder",
+  "nav.patient_intake": "Hasta Kabul",
   "nav.settings": "Ayarlar",
   "nav.translations": "Arayüz Metinleri",
 

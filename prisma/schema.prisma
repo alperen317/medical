@@ -158,6 +158,9 @@ model Patient {
   prescriptions   Prescription[]
   appointments    Appointment[]
   aiReportRatings AiReportRating[]
+  // ClinicalOS kabul süreçleri — bu hastayı otomatik oluşturan/eşleşen
+  // WorkflowInstance kayıtları (bkz. WorkflowInstance.promotedPatientId).
+  intakeInstances WorkflowInstance[]
 
   @@index([status])
   @@index([assignedDoctorId])
@@ -293,6 +296,134 @@ model Appointment {
   @@index([doctorId])
   @@index([scheduledAt(sort: Desc)])
   @@index([status])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ClinicalOS v2 — metadata-driven workflow platformu (v1 klinik modellerinden
+// bağımsız, FK ilişkisi yok; bkz. ClinicalOS_MLP_Onkoloji_Tasarim_Dokumani.docx)
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum WorkflowDefinitionStatus {
+  draft
+  published
+}
+
+enum WorkflowInstanceStatus {
+  in_progress
+  completed
+}
+
+model WorkflowDefinition {
+  id        String                   @id @default(cuid())
+  name      String
+  branch    String                   // örn. "onkoloji" — çekirdek branştan bağımsız kalır
+  version   Int                      @default(1)
+  status    WorkflowDefinitionStatus @default(draft)
+  // node graph: { nodes: [{ id, type: start|form|decision|document|task|end, config }], edges: [...] }
+  nodes     Json
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+
+  instances WorkflowInstance[]
+
+  @@index([branch, status])
+}
+
+model FormDefinition {
+  id        String   @id @default(cuid())
+  // Versiyon ailesi kimliği — bir formun ilk versiyonunun id'siyle aynıdır.
+  // Workflow node'ları (formId) her zaman tek bir versiyonun (bu tablonun bir
+  // satırının) id'sine sabitlenir; satırlar hiçbir zaman yerinde değiştirilmez
+  // (immutable snapshot) — düzenleme her zaman rootId aynı kalacak şekilde yeni
+  // bir satır/versiyon oluşturur. Böylece zaten kullanımda olan workflow'lar ve
+  // instance'lar hep gördükleri alan setini (id/tip) korur.
+  rootId    String
+  version   Int      @default(1)
+  isLatest  Boolean  @default(true)
+  name      String
+  // field metadata: [{ id, type: text|number|date|boolean|select|textarea|file, label, required, options?, visibleIf? }]
+  fields    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rootId])
+}
+
+model RuleDefinition {
+  id        String   @id @default(cuid())
+  name      String
+  // basit koşul objesi: { field, operator, value, then, else } — Form alan id'lerine referans verir
+  condition Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PatientV2 {
+  id           String   @id @default(cuid())
+  tcNo         String?  @unique
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime
+  gender       Gender
+  phone        String
+  email        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workflowInstances WorkflowInstance[]
+}
+
+model WorkflowInstance {
+  id               String                  @id @default(cuid())
+  patientId        String
+  workflowDefId    String
+  workflowVersion  Int
+  currentNodeId    String
+  status           WorkflowInstanceStatus  @default(in_progress)
+  // form cevapları: { [formFieldId]: value }
+  answers          Json                    @default("{}")
+  // tamamlanan görevler / bekleyen görevler
+  tasks            Json                    @default("[]")
+  // ziyaret edilen actionable node id'lerinin sırası — "Geri" navigasyonu için
+  history          Json                    @default("[]")
+  startedAt        DateTime                @default(now())
+  completedAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  // "end" node'una ulaşılınca (hasta doktora hazır) otomatik oluşturulan/eşleşen
+  // gerçek Patient kaydı — /patients sayfasında bu kabul sürecinin Son Kontrol
+  // özetini birebir göstermek için (bkz. promotePatientFromIntake).
+  promotedPatientId String?
+
+  patient          PatientV2               @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workflowDef      WorkflowDefinition      @relation(fields: [workflowDefId], references: [id])
+  documents        WorkflowDocument[]
+  promotedPatient  Patient?                @relation(fields: [promotedPatientId], references: [id])
+
+  @@index([patientId])
+  @@index([workflowDefId])
+  @@index([status])
+  @@index([promotedPatientId])
+}
+
+model WorkflowDocument {
+  id                 String   @id @default(cuid())
+  workflowInstanceId String
+  nodeId             String
+  // Bu belgenin ait olduğu document node checklist kalemi (DocumentChecklistItem.label).
+  // Checklist kaleminin kararlı bir id'si yok (bkz. workflow/types.ts) — Studio'da
+  // kalemler yalnızca label/required üzerinden düzenlendiği için eşleşme label
+  // metnine göre yapılıyor. null: checklist'te karşılığı olmayan ek/serbest yükleme.
+  checklistLabel     String?
+  name               String
+  url                String
+  size               Int
+  type               String
+  createdAt          DateTime @default(now())
+
+  workflowInstance WorkflowInstance @relation(fields: [workflowInstanceId], references: [id], onDelete: Cascade)
+
+  @@index([workflowInstanceId])
 }
 
 model SystemSetting {

@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users,
   Settings, Activity, LogOut,
   UserCog, ShieldCheck, Building2, PanelLeftOpen, PanelLeftClose,
-  CalendarDays, UserCheck, Languages, Sun, Moon, Monitor,
+  CalendarDays, UserCheck, Languages, Sun, Moon, Monitor, Workflow, ClipboardList, FileStack,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -40,10 +40,13 @@ const clinicalNavItems: NavItem[] = [
   { href: "/patients",     labelKey: "nav.patients",     icon: Users, roles: ["super_admin"] },
   { href: "/appointments", labelKey: "nav.appointments", icon: CalendarDays },
   { href: "/my-patients",  labelKey: "nav.my_patients",  icon: UserCheck, roles: ["doctor", "doktor", "hekim"] },
+  { href: "/clinicalos/intake", labelKey: "nav.patient_intake", icon: ClipboardList, permission: "intake:execute" },
   { href: "/activity",     labelKey: "nav.activity",     icon: Activity },
 ]
 
 const adminNavItems: NavItem[] = [
+  { href: "/clinicalos/studio",     labelKey: "nav.workflow_studio", icon: Workflow, permission: "workflow:manage" },
+  { href: "/clinicalos/studio/forms", labelKey: "nav.form_builder", icon: FileStack, permission: "workflow:manage" },
   { href: "/settings/users",        labelKey: "nav.users",        icon: UserCog,    permission: "user:read" },
   { href: "/settings/departments",  labelKey: "nav.departments",  icon: Building2,  permission: "settings:manage" },
   { href: "/settings/roles",        labelKey: "nav.roles",        icon: ShieldCheck, permission: "settings:manage" },
@@ -69,6 +72,17 @@ function NavSection({ label, items, pathname, permissions, roleName, collapsed }
 
   if (visible.length === 0) return null
 
+  // Birden fazla item pathname ile eşleşebilir (ör. /clinicalos/studio ve
+  // /clinicalos/studio/forms); yalnızca en uzun (en spesifik) href aktif sayılır.
+  const activeHref = visible.reduce<string | null>((best, item) => {
+    const matches =
+      pathname === item.href ||
+      (item.href !== "/settings" && pathname.startsWith(item.href + "/"))
+    if (!matches) return best
+    if (!best || item.href.length > best.length) return item.href
+    return best
+  }, null)
+
   return (
     <div>
       {!collapsed && (
@@ -81,9 +95,7 @@ function NavSection({ label, items, pathname, permissions, roleName, collapsed }
         {visible.map((item) => {
           const Icon = item.icon
           const itemLabel = t(item.labelKey as Parameters<typeof t>[0])
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/settings" && pathname.startsWith(item.href + "/"))
+          const isActive = item.href === activeHref
           const link = (
             <Link
               key={item.href}
